@@ -1,27 +1,10 @@
+from polymer_utils.charging.averaging import write_lib_chgs_from_mono_data
+from polymer_utils.representation import PolymerDirManager
 from pathlib import Path
-from polymer_utils.representation import PolymerDir
-from openff.toolkit.topology import Topology
 
+main_ff_xml = Path('resources')/'force_fields'/'openff_constrained-2.0.0.offxml'
+p = Path('Collections') / 'simple_polymers_updated'
+mgr = PolymerDirManager(p)
+pdir = mgr.mol_dirs['naturalrubber_solv_water']
 
-def load_mol_and_topo(pdb_path : Path, json_path : Path, verbose : bool=False):
-    '''Load Molecule and Topology from a pdb and a monomer json file, performing residue matching on monomer units
-    Assumes that the pdb only contains has ONE simple homopolymer (will only load first molecule if multiple are present'''
-    off_topology, _, error = Topology.from_pdb_and_monomer_info(str(pdb_path), json_path, strict=True, verbose=verbose)
-    mol = next(off_topology.molecules) # get the first molecule (assumed to be the polymer of interest)
-
-    return mol, off_topology
-
-
-solvent = 'water'
-
-solv_src = Path('Core/solvents')/solvent
-solvent_pdb = solv_src/f'{solvent}.pdb'
-solvent_json = solv_src/f'{solvent}.json'
-
-
-
-pdir = PolymerDir.from_file(Path('Polymers/polyvinylchloride/polyvinylchloride_solv_water/checkpoint/polyvinylchloride_solv_water_checkpoint.pkl'))
-
-print(pdir.info, pdir.checkpoint_path)
-# load_mol_and_topo(pdir.info.structure_file, pdir.info.monomer_file)
-load_mol_and_topo(solvent_pdb, solvent_json)
+ff, lc = write_lib_chgs_from_mono_data(pdir.monomer_data_charged, main_ff_xml, Path('test.offxml'))
