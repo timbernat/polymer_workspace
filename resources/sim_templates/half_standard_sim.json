@@ -1,7 +1,7 @@
 {
     "total_time_value": 5,
     "total_time_unit": "nanosecond",
-    "num_samples": 2500,
+    "num_samples": 1250,
     "charge_method": "ABE10_averaged",
     "reported_state_data": {
         "step": true,
