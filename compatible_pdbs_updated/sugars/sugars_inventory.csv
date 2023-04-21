@@ -1,0 +1,6 @@
+,Species,PDB present,JSON present
+0,dextran,True,True
+1,messy_sugar,True,False
+2,cellulose,True,True
+3,chitin,True,True
+4,trimannose,True,False

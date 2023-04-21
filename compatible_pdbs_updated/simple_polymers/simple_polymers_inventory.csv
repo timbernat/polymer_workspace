@@ -1,0 +1,18 @@
+,Species,PDB present,JSON present
+0,polyethylmethacrylate,True,True
+1,PEO_PLGA,True,True
+2,bisphenolA,True,True
+3,polymethylketone,True,True
+4,polypyrrole,True,False
+5,polyphenylenesulfone,True,True
+6,naturalrubber,True,True
+7,polythiophene,True,True
+8,atactic_styrene,True,True
+9,polyvinylchloride,True,True
+10,polyphenyleneI,True,True
+11,syntactic_styrene,True,True
+12,polyphenyleneIII,True,True
+13,PAMAM,True,True
+14,polyphenyleneII,True,True
+15,polyethylene,True,True
+16,PET,True,False
