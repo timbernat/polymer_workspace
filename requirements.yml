@@ -63,6 +63,7 @@ debugpy                   1.6.6           py310heca2aa9_0    conda-forge
 decorator                 5.1.1              pyhd8ed1ab_0    conda-forge
 defusedxml                0.7.1              pyhd8ed1ab_0    conda-forge
 dgl                       1.0.1                    pypi_0    pypi
+ele                       0.2.0              pyhd8ed1ab_0    conda-forge
 entrypoints               0.4                pyhd8ed1ab_0    conda-forge
 espaloma-charge           0.0.8                    pypi_0    pypi
 exceptiongroup            1.1.0              pyhd8ed1ab_0    conda-forge
@@ -101,7 +102,7 @@ jedi                      0.18.2             pyhd8ed1ab_0    conda-forge
 jinja2                    3.1.2              pyhd8ed1ab_1    conda-forge
 jpeg                      9e                   h0b41bf4_3    conda-forge
 jsonschema                4.17.3             pyhd8ed1ab_0    conda-forge
-jupyter_client            8.0.2              pyhd8ed1ab_0    conda-forge
+jupyter_client            7.4.9              pyhd8ed1ab_0    conda-forge
 jupyter_core              5.2.0           py310hff52083_0    conda-forge
 jupyter_events            0.6.3              pyhd8ed1ab_0    conda-forge
 jupyter_server            2.2.1              pyhd8ed1ab_0    conda-forge
@@ -162,6 +163,7 @@ lzo                       2.10              h516909a_1000    conda-forge
 markupsafe                2.1.2           py310h1fa729e_0    conda-forge
 matplotlib-base           3.6.3           py310he60537e_0    conda-forge
 matplotlib-inline         0.1.6              pyhd8ed1ab_0    conda-forge
+mbuild                    0.16.1             pyhd8ed1ab_0    conda-forge
 mdtraj                    1.9.7           py310h902c554_4    conda-forge
 mistune                   2.0.5              pyhd8ed1ab_0    conda-forge
 mmpbsa-py                 16.0                     pypi_0    pypi
@@ -193,16 +195,17 @@ nvidia-cuda-runtime-cu11  11.7.99                  pypi_0    pypi
 nvidia-cudnn-cu11         8.5.0.96                 pypi_0    pypi
 ocl-icd                   2.3.1                h7f98852_0    conda-forge
 ocl-icd-system            1.0.0                         1    conda-forge
+openbabel                 3.1.1           py310heaf86c6_5    conda-forge
 openeye-toolkits          2022.2.2                py310_0    openeye
 openff-amber-ff-ports     0.0.3              pyh6c4a22f_0    conda-forge
 openff-forcefields        2.0.0              pyh6c4a22f_0    conda-forge
 openff-interchange-base   0.2.3              pyhd8ed1ab_1    conda-forge
-openff-toolkit            0.10.1+264.gd8033ff4           dev_0    <develop>
+openff-toolkit            0.10.1+277.gc3a43c3b           dev_0    <develop>
 openff-units              0.2.0              pyh1a96a4e_0    conda-forge
 openff-utilities          0.1.8              pyh1a96a4e_0    conda-forge
 openjpeg                  2.5.0                hfec8fc6_2    conda-forge
 openmm                    8.0.0           py310h5728c26_0    conda-forge
-openssl                   3.0.8                h0b41bf4_0    conda-forge
+openssl                   3.1.0                h0b41bf4_0    conda-forge
 orc                       1.8.2                hfdbbad2_2    conda-forge
 packaging                 21.3               pyhd8ed1ab_0    conda-forge
 packmol                   20.010               h86c2bf4_0    conda-forge
@@ -229,6 +232,7 @@ pluggy                    1.0.0              pyhd8ed1ab_5    conda-forge
 pooch                     1.6.0              pyhd8ed1ab_0    conda-forge
 prometheus_client         0.16.0             pyhd8ed1ab_0    conda-forge
 prompt-toolkit            3.0.36             pyha770c72_0    conda-forge
+protobuf                  4.21.12         py310heca2aa9_0    conda-forge
 psutil                    5.9.4           py310h5764c6d_0    conda-forge
 pthread-stubs             0.4               h36c2ea0_1001    conda-forge
 ptyprocess                0.7.0              pyhd3deb0d_0    conda-forge
@@ -291,6 +295,7 @@ torch                     1.13.1                   pypi_0    pypi
 tornado                   6.2             py310h5764c6d_1    conda-forge
 tqdm                      4.64.1             pyhd8ed1ab_0    conda-forge
 traitlets                 5.9.0              pyhd8ed1ab_0    conda-forge
+treelib                   1.6.4              pyhd8ed1ab_0    conda-forge
 types-docutils            0.19.1.3                 pypi_0    pypi
 types-pkg-resources       0.1.3                    pypi_0    pypi
 types-pyyaml              6.0.12.6                 pypi_0    pypi
