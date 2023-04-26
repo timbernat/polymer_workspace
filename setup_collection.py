@@ -1,11 +1,11 @@
 # Custom Imports
-from polymer_utils.general import timestamp_now
-from polymer_utils.logutils import MultiStreamFileHandler
-from polymer_utils.filetree import startfile
+from polysaccharide.general import timestamp_now
+from polysaccharide.logutils import MultiStreamFileHandler
+from polysaccharide.filetree import startfile
 
-from polymer_utils.representation import PolymerManager
-from polymer_utils.representation import LOGGER as polylogger
-from polymer_utils.solvation.solvents import WATER_TIP3P
+from polysaccharide.representation import PolymerManager
+from polysaccharide.representation import LOGGER as polylogger
+from polysaccharide.solvation.solvents import WATER_TIP3P
 
 # General Imports
 from pathlib import Path

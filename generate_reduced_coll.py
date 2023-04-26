@@ -1,8 +1,8 @@
 from pathlib import Path
 from shutil import copyfile
 
-from polymer_utils.representation import PolymerManager
-from polymer_utils.molutils.building import build_linear_polymer_limited
+from polysaccharide.representation import PolymerManager
+from polysaccharide.molutils.polymer.building import build_linear_polymer_limited
 
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
