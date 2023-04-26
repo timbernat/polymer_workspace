@@ -3,7 +3,7 @@ from polymer_utils.general import timestamp_now
 from polymer_utils.logutils import MultiStreamFileHandler
 from polymer_utils.filetree import startfile
 
-from polymer_utils.representation import PolymerDirManager
+from polymer_utils.representation import PolymerManager
 from polymer_utils.representation import LOGGER as polylogger
 from polymer_utils.solvation.solvents import WATER_TIP3P
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     structure_path   = poly_source_path / f'{poly_source_path.name}_structures'
     monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
 
-    mgr = PolymerDirManager(collection_path)
+    mgr = PolymerManager(collection_path)
 
     # Perform manager setup / purge actions
     if purge_logs: # NOTE : must be done BEFORE log FileHandler is created, as this will destroy it's output as well

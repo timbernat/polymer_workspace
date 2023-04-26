@@ -1,7 +1,7 @@
 from pathlib import Path
 from shutil import copyfile
 
-from polymer_utils.representation import PolymerDirManager
+from polymer_utils.representation import PolymerManager
 from polymer_utils.molutils.building import build_linear_polymer_limited
 
 COLL_PATH = Path('Collections')
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     structure_path   = poly_source_path / f'{poly_source_path.name}_structures'
     monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
 
-    mgr = PolymerDirManager(collection_path)
+    mgr = PolymerManager(collection_path)
     if not mgr.mol_dirs: 
         mgr.populate_collection(struct_dir=structure_path, monomer_dir=monomer_path) # ensure originals have been loaded
     
