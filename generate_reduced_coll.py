@@ -22,7 +22,7 @@ if __name__ == '__main__':
     monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
 
     mgr = PolymerManager(collection_path)
-    if not mgr.mol_dirs: 
+    if not mgr.polymers: 
         mgr.populate_collection(struct_dir=structure_path, monomer_dir=monomer_path) # ensure originals have been loaded
     
     # create output dirs
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     # generate new structures
     reverse = False # needed
-    for pdir in mgr.mol_dirs_list:
+    for pdir in mgr.polymers_list:
         print(pdir.mol_name)
         monomers = pdir.monomer_data['monomers']
         if pdir.mol_name in flip_term_group_labels:

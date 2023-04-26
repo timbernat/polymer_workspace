@@ -53,7 +53,7 @@ if __name__ == '__main__':
         if purge_sims:
             mgr.purge_sims(really=True)
 
-        if not mgr.mol_dirs: # will be empty if not yet instantiated or if reset prior
+        if not mgr.polymers: # will be empty if not yet instantiated or if reset prior
             mgr.populate_collection(struct_dir=structure_path, monomer_dir=monomer_path)
             mgr.solvate_collection(desired_solvents, template_path=solv_template, exclusion=exclusion)
     startfile(mgr.collection_dir)
