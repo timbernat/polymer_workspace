@@ -1,6 +1,11 @@
-Collections/*
+# Collections of Polymers
 *Polymers*/*
 Polyamides/*
-pcharge_heatmaps/*
+Collections/*
+
+# Custom utilities which have their own repo
 polymer_utils/*
+
+# temporary testing folders
+pcharge_heatmaps/*
 logging_test/*
