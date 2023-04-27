@@ -1,0 +1,11 @@
+{
+    "overwrite_ff_xml": false,
+    "overwrite_chg_mono": false,
+    "base_ff_path": "resources/force_fields/openff_constrained-2.0.0.offxml",
+    "charge_methods": [
+        "ABE10_exact",
+        "Espaloma_AM1BCC",
+        "ABE10_averaged"
+    ],
+    "averaging_charge_method": "ABE10_exact"
+}
