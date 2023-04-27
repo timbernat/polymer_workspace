@@ -1,17 +1,25 @@
+'''For generating a compatible_pdbs folder of reduced size (i.e. < 300 atom) WaSPs to permit ABE10 charging'''
+
+# Generic imports
 from pathlib import Path
 from shutil import copyfile
 
+# Custom Imports
 from polysaccharide.representation import PolymerManager
+from polysaccharide.solvation.solvents import WATER_TIP3P
 from polysaccharide.molutils.polymer.building import build_linear_polymer_limited
 
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
+
+# ------------------------------------------------------------------------------
 
 # Set parameters here
 chain_lim = 180
 source_coll_name = 'water_soluble_polymers'
 output_coll_name = 'water_soluble_small'
 flip_term_group_labels = ['paam_modified']
+desired_solvents = (None,) #WATER_TIP3P)
 
 if __name__ == '__main__':
     # load source polymers
@@ -37,12 +45,13 @@ if __name__ == '__main__':
     # generate new structures
     reverse = False # needed
     for pdir in mgr.polymers_list:
-        print(pdir.mol_name)
-        monomers = pdir.monomer_data['monomers']
-        if pdir.mol_name in flip_term_group_labels:
-            monomers.pop('paam_SPECIAL_TERM')   # special case needed for extra messy term group in PAAM...
-            reverse = True                      # ...TODO : find generalized way to isolate head and tail groups from larger collection of monomers
+        if pdir.solvent in desired_solvents:
+            print(pdir.mol_name)
+            monomers = pdir.monomer_data['monomers']
+            if pdir.mol_name in flip_term_group_labels:
+                monomers.pop('paam_SPECIAL_TERM')   # special case needed for extra messy term group in PAAM...
+                reverse = True                      # ...TODO : find generalized way to isolate head and tail groups from larger collection of monomers
 
-        chain = build_linear_polymer_limited(monomers, max_chain_len=chain_lim, reverse_term_labels=reverse)
-        chain.save(str(reduced_structures/f'{pdir.mol_name}.pdb'), overwrite=True)
-        copyfile(pdir.monomer_file, reduced_monomers/f'{pdir.mol_name}.json')
+            chain = build_linear_polymer_limited(monomers, max_chain_len=chain_lim, reverse_term_labels=reverse)
+            chain.save(str(reduced_structures/f'{pdir.mol_name}.pdb'), overwrite=True)
+            copyfile(pdir.monomer_file, reduced_monomers/f'{pdir.mol_name}.json')
