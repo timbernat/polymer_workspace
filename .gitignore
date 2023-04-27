@@ -5,6 +5,7 @@ Collections/*
 
 # Custom utilities which have their own repo
 polymer_utils/*
+polysaccharide/*
 
 # temporary testing folders
 pcharge_heatmaps/*
