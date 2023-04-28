@@ -2,8 +2,7 @@
 
 # Custom Imports
 from polysaccharide import LOGGERS_MASTER
-from polysaccharide.general import timestamp_now
-from polysaccharide.logutils import MultiStreamFileHandler
+from polysaccharide.logutils import ProcessLogHandler
 from polysaccharide.filetree import startfile
 from polysaccharide.representation import PolymerManager
 from polysaccharide.solvation.solvents import WATER_TIP3P
@@ -48,9 +47,8 @@ if __name__ == '__main__':
 
     creation_logger = logging.getLogger('polymer_setup')
     loggers = [creation_logger, *LOGGERS_MASTER]
-    logfile_path = mgr.log_dir/f'Setup_{timestamp_now()}.log'
 
-    with MultiStreamFileHandler(logfile_path, loggers=loggers, proc_name=f'Creation of collection "{mgr.collection_dir.name}"'):
+    with ProcessLogHandler(filedir=mgr.log_dir, loggers=loggers, proc_name=f'Setup of {mgr.collection_dir.name}', timestamp=True):
         if reset:
             mgr.purge_collection(really=True, purge_logs=False) # Explicitly DON'T purge logs here (will be done prior to entering log loop)
 
