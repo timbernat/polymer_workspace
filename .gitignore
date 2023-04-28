@@ -7,6 +7,9 @@ Collections/*
 polymer_utils/*
 polysaccharide/*
 
+# compiled python files
+*cpython*
+
 # temporary testing folders
 pcharge_heatmaps/*
 logging_test/*
