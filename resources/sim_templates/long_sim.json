@@ -3,6 +3,7 @@
     "total_time_unit": "nanosecond",
     "num_samples": 10000,
     "charge_method": "ABE10_averaged",
+    "report_to_pdb": true,
     "reported_state_data": {
         "step": true,
         "time": true,

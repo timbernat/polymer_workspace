@@ -3,6 +3,7 @@
     "total_time_unit": "picosecond",
     "num_samples": 500,
     "charge_method": "ABE10_exact",
+    "report_to_pdb": true,
     "reported_state_data": {
         "step": true,
         "time": true,
