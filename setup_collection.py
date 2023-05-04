@@ -7,7 +7,7 @@ from polysaccharide.filetree import startfile
 from polysaccharide.representation import PolymerManager
 from polysaccharide.solvation.solvents import WATER_TIP3P
 
-# General Imports
+# Generic Imports
 from pathlib import Path
 import logging
 logging.basicConfig(level=logging.INFO)
