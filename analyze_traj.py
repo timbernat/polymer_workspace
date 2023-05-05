@@ -17,11 +17,10 @@ main_logger = logging.getLogger(__name__)
 loggers = [main_logger, *LOGGERS_MASTER]
 
 # Polymer Imports
-from polysaccharide.logutils import ProcessLogHandler
-from polysaccharide.representation import Polymer, PolymerManager, filter_factory_by_attr
+from polysaccharide.representation import Polymer, PolymerManager, has_sims
 from polysaccharide.solvation.solvents import WATER_TIP3P
 from polysaccharide.simulation import SimulationParameters, SimulationPaths
-from polysaccharide.analysis import trajectory, plotprops, polyprops
+from polysaccharide.analysis import trajectory, plotprops
 
 # Static Paths
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
@@ -33,7 +32,6 @@ SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
 
 # ------------------------------------------------------------------------------
 
-# BEGIN CHARGING / SIM LOOP - Perform charge averaging on all target molecules which don't already have averaged LCs; Load forcefield for those which already do 
 src_coll_path = COLL_PATH / 'water_soluble_large'
 mgr = PolymerManager(src_coll_path)
 desired_solvents = (WATER_TIP3P,)
@@ -41,7 +39,7 @@ desired_solvents = (WATER_TIP3P,)
 main_logger = logging.getLogger(__name__)
 loggers = [main_logger, *LOGGERS_MASTER] # loggers from all modules which produce logging output
 
-has_sims = filter_factory_by_attr('completed_sims')
+# ------------------------------------------------------------------------------
 
 @mgr.logging_wrapper(loggers, proc_name='Trajectory Analysis', filters=(has_sims))
 def perform_prop_analysis(polymer : Polymer, main_logger : logging.Logger, traj_sample_interval : int=1, plot : bool=False):
