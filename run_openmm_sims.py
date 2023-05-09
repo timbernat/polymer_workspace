@@ -34,9 +34,13 @@ mgr = PolymerManager(src_coll_path)
 
 desired_solvents = (WATER_TIP3P,)
 sim_param_paths = [
-    SIM_PARAM_PATH / 'standard_sim_ABE_avg_dcd.json',
-    SIM_PARAM_PATH / 'standard_sim_espaloma_dcd.json',
+    SIM_PARAM_PATH / 'long_sim_ABE_avg_dcd.json',
+    SIM_PARAM_PATH / 'long_sim_espaloma_dcd.json',
 ]
+# sim_param_paths = [
+#     SIM_PARAM_PATH / 'standard_sim_ABE_avg_dcd.json',
+#     SIM_PARAM_PATH / 'standard_sim_espaloma_dcd.json',
+# ]
 
 # ------------------------------------------------------------------------------
 
