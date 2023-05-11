@@ -55,6 +55,6 @@ for sim_param_path in sim_param_paths:
     @mgr.logging_wrapper(loggers, proc_name=proc_name, filters=(solvated, charged))
     def simulate(polymer : Polymer, sim_params : SimulationParameters) -> None:
         '''Run single NPT-ensemble simulation'''
-        polymer.run_simulation_NPT(sim_params)
+        polymer.run_simulation(sim_params, ensemble='NPT')
 
     simulate(sim_params)
