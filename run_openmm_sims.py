@@ -1,23 +1,15 @@
 '''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
 
-# Generic imports
-import pandas as pd
-from pathlib import Path
-from openmm.unit import nanometer
-
 # Logging
+from pathlib import Path
 import logging
 logging.basicConfig(level=logging.INFO)
-import matplotlib.pyplot as plt
 
 from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-
 main_logger = logging.getLogger(__name__)
 loggers = [main_logger, *LOGGERS_MASTER]
 
 # Polymer Imports
-from polysaccharide.logutils import ProcessLogHandler
 from polysaccharide.solvation.solvents import WATER_TIP3P
 from polysaccharide.representation import Polymer, PolymerManager, filter_factory_by_attr
 from polysaccharide.simulation import SimulationParameters
