@@ -18,8 +18,6 @@ logging.basicConfig(level=logging.INFO)
 import matplotlib.pyplot as plt
 
 from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-
 main_logger = logging.getLogger(__name__)
 loggers = [main_logger, *LOGGERS_MASTER]
 
@@ -42,15 +40,13 @@ src_coll_path = COLL_PATH / 'water_soluble_large'
 save_dir = Path('figures_for_paper/100_ns_trials')
 compare_dir = Path('colina_data')
 
+is_long_sim = lambda sim_paths, sim_params : (sim_params.total_time == 100*nanosecond)
+has_binary_traj = lambda sim_paths, sim_params : (sim_params.report_to_pdb == False)
+
 # ------------------------------------------------------------------------------
 
-# load manager and loggers
+# load manager
 mgr = PolymerManager(src_coll_path)
-main_logger = logging.getLogger(__name__)
-loggers = [main_logger, *LOGGERS_MASTER] # loggers from all modules which produce logging output
-
-# filter for polymers with simulation and charges successfully generated
-sim_poly = mgr.filtered_by(has_sims)
 
 # create save folder and sets of structure converters and labels
 save_dir.mkdir(exist_ok=True)
@@ -83,71 +79,68 @@ def generate_figures(polymer : Polymer, main_logger : logging.Logger, compare_di
     main_logger.info('') # palate cleanser
         
     # Plot observables
-    for sim_dir, sim_paths_file in polymer.simulation_paths.items():
-        sim_paths, sim_params = polymer.load_sim_paths_and_params(sim_dir)
+    for sim_dir, (sim_paths, sim_params) in polymer.filter_sim_dirs(conditions=(is_long_sim, has_binary_traj)).items():
+        # read simulation trajectory data
+        chg_method = sim_params.charge_method
+        time_data = pd.read_csv(sim_paths.time_data)
+        spatial_data = pd.read_csv(sim_paths.spatial_data)
+        main_logger.info(f'Found trajectory data based on "{chg_method}" charges')
 
-        if (sim_paths.trajectory.suffix == '.dcd') and (sim_params.total_time == 100*nanosecond):
-            # read simulation trajectory data
-            chg_method = sim_params.charge_method
-            time_data = pd.read_csv(sim_paths.time_data)
-            spatial_data = pd.read_csv(sim_paths.spatial_data)
-            main_logger.info(f'Found trajectory data based on "{chg_method}" charges')
+        # Plot RDFs
+        main_logger.info('Plotting radial distribution functions (RDFs)')
+        radii, rdfs = trajectory.rdfs_to_plot_data(spatial_data)
+        num_rdfs = len(rdfs.columns)
+        nrows_rdf = num_rdfs // 3
+        ncols_rdf = ceil(num_rdfs / nrows_rdf)
+        fig_rdf, ax_rdf = plotutils.plot_df_props(radii, rdfs, nrows=nrows_rdf, ncols=ncols_rdf)
+        main_logger.info('Saving RDF plots')
+        fig_rdf.savefig(parent_dir / f'RDFs - {mol_name}.png', bbox_inches='tight')
+        plt.close()
 
-            # Plot RDFs
-            main_logger.info('Plotting radial distribution functions (RDFs)')
-            radii, rdfs = trajectory.rdfs_to_plot_data(spatial_data)
-            num_rdfs = len(rdfs.columns)
-            nrows_rdf = num_rdfs // 3
-            ncols_rdf = ceil(num_rdfs / nrows_rdf)
-            fig_rdf, ax_rdf = plotutils.plot_df_props(radii, rdfs, nrows=nrows_rdf, ncols=ncols_rdf)
-            main_logger.info('Saving RDF plots')
-            fig_rdf.savefig(parent_dir / f'RDFs - {mol_name}.png', bbox_inches='tight')
-            plt.close()
+        # Plot time series' and autocorrelation functions
+        main_logger.info(f'Acquiring polymer property time series from {chg_method}-charged trajectory')
+        times, time_series = trajectory.props_to_plot_data(time_data)
+        if ax_time is None: # create new axes for first time...
+            fig_time, ax_time = plotutils.plot_df_props(times, time_series)
+        else: # otherwise, overlay plots
+            for ax, (prop_name, data) in zip(ax_time, time_series.items()):
+                ax.plot(times, data)
+                ax.legend(chg_methods)
 
-            # Plot time series' and autocorrelation functions
-            main_logger.info(f'Acquiring polymer property time series from {chg_method}-charged trajectory')
-            times, time_series = trajectory.props_to_plot_data(time_data)
-            if ax_time is None: # create new axes for first time...
-                fig_time, ax_time = plotutils.plot_df_props(times, time_series)
-            else: # otherwise, overlay plots
-                for ax, (prop_name, data) in zip(ax_time, time_series.items()):
-                    ax.plot(times, data)
-                    ax.legend(chg_methods)
+        main_logger.info(f'Acquiring polymer property autocorrelation functions (ACFs) from {chg_method}-charged trajectory')
+        time_series_acfs = time_series.apply(statistics.autocorrelate)
+        time_series_acfs = time_series_acfs.rename(mapper=lambda name : re.sub('\(.*?\)', 'ACF', name), axis='columns')
+        if ax_acf is None: # create new axes for first time...
+            fig_acf, ax_acf = plotutils.plot_df_props(times, time_series_acfs)
+        else: # otherwise, overlay plots
+            for ax, (prop_name, data) in zip(ax_acf, time_series_acfs.items()):
+                ax.plot(times, data)
+                ax.legend(chg_methods)
 
-            main_logger.info(f'Acquiring polymer property autocorrelation functions (ACFs) from {chg_method}-charged trajectory')
-            time_series_acfs = time_series.apply(statistics.autocorrelate)
-            time_series_acfs = time_series_acfs.rename(mapper=lambda name : re.sub('\(.*?\)', 'ACF', name), axis='columns')
-            if ax_acf is None: # create new axes for first time...
-                fig_acf, ax_acf = plotutils.plot_df_props(times, time_series_acfs)
-            else: # otherwise, overlay plots
-                for ax, (prop_name, data) in zip(ax_acf, time_series_acfs.items()):
-                    ax.plot(times, data)
-                    ax.legend(chg_methods)
+        # Determine equilibration times and average observables
+        main_logger.info(f'Determining equilibration times for charge method {chg_method} trajectory')
+        nrows, ncols = 1, len(time_series.columns)
+        fig_equil, ax_equil = plotutils.presize_subplots(nrows, ncols)
+        for ax, (prop_name, series) in zip(ax_equil, time_series.items()):
+            series = np.array(series)
+            equil_idx = statistics.equil_loc(series)
+            equil_time = times.to_numpy().flatten()[equil_idx]
+            main_logger.info(f'Determined "{prop_name}" to have equilibrated after time {equil_time}') # TODO : find way to incorporate units into this
 
-            # Determine equilibration times and average observables
-            main_logger.info(f'Determining equilibration times for charge method {chg_method} trajectory')
-            nrows, ncols = 1, len(time_series.columns)
-            fig_equil, ax_equil = plotutils.presize_subplots(nrows, ncols)
-            for ax, (prop_name, series) in zip(ax_equil, time_series.items()):
-                series = np.array(series)
-                equil_idx = statistics.equil_loc(series)
-                equil_time = times.to_numpy().flatten()[equil_idx]
-                main_logger.info(f'Determined "{prop_name}" to have equilibrated after time {equil_time}') # TODO : find way to incorporate units into this
+            obs = round(np.mean(series[equil_idx:]), obs_precision)
+            observ[f'OpenFF 2.0.0 - {chg_method}'][prop_name] = obs
+            main_logger.info(f'Determined equilibrium average of "{prop_name}" to be {obs}') 
 
-                obs = round(np.mean(series[equil_idx:]), obs_precision)
-                observ[f'OpenFF 2.0.0 - {chg_method}'][prop_name] = obs
-                main_logger.info(f'Determined equilibrium average of "{prop_name}" to be {obs}') 
-
-                main_logger.info(f'Plotting equilibration cutoff curve for "{prop_name}"')
-                ax.plot(times, series)
-                ax.axvline(equil_time, color='r')
-                ax.set_xlabel(times.columns[0])
-                ax.set_ylabel(prop_name)
-                ax.legend([f'<O> = {obs} (after t={equil_time})'], handlelength=0, loc='best') # position annotation in empty region
-            main_logger.info('Saving equilibration plots')
-            fig_equil.savefig(parent_dir / f'Equil times {chg_method} - {mol_name}.png', bbox_inches='tight')
-            plt.close()
-            main_logger.info('') # palate cleanser
+            main_logger.info(f'Plotting equilibration cutoff curve for "{prop_name}"')
+            ax.plot(times, series)
+            ax.axvline(equil_time, color='r')
+            ax.set_xlabel(times.columns[0])
+            ax.set_ylabel(prop_name)
+            ax.legend([f'<O> = {obs} (after t={equil_time})'], handlelength=0, loc='best') # position annotation in empty region
+        main_logger.info('Saving equilibration plots')
+        fig_equil.savefig(parent_dir / f'Equil times {chg_method} - {mol_name}.png', bbox_inches='tight')
+        plt.close()
+        main_logger.info('') # palate cleanser
 
     # Plot overlaid property and ACF data
     main_logger.info(f'Saving polymer property time series plots for {mol_name}')
