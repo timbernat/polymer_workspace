@@ -3,7 +3,7 @@
 # Generic imports
 import pandas as pd
 from pathlib import Path
-from openmm.unit import nanometer
+from openmm.unit import nanometer, nanosecond
 
 # Logging
 import logging
@@ -41,14 +41,14 @@ loggers = [main_logger, *LOGGERS_MASTER] # loggers from all modules which produc
 
 # ------------------------------------------------------------------------------
 
-@mgr.logging_wrapper(loggers, proc_name='Trajectory Analysis', filters=(has_sims))
+@mgr.logging_wrapper(loggers, proc_name='Trajectory Analysis', filters=(has_sims,))
 def perform_prop_analysis(polymer : Polymer, main_logger : logging.Logger, traj_sample_interval : int=1) -> None:
     '''Analyze trajectories to obtain polymer property data'''
     # aqcuire files for all information
     for sim_dir, sim_paths_file in polymer.simulation_paths.items():
         sim_paths, sim_params = polymer.load_sim_paths_and_params(sim_dir)
 
-        if sim_paths.trajectory.suffix == '.dcd': # only attempt to load compressed binary trajectories
+        if (sim_paths.trajectory.suffix == '.dcd') and (sim_params.total_time == 100*nanosecond): # only attempt to load compressed binary trajectories
             main_logger.info(f'Found DCD trajectory {sim_paths.trajectory}')
             state_data = pd.read_csv(sim_paths.state_data)
             traj = trajectory.load_traj(sim_paths.trajectory, topo_path=polymer.structure_file, sample_interval=traj_sample_interval, remove_solvent=True)
