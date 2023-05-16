@@ -17,7 +17,7 @@ COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
 # Set parameters here
 chain_lim = 180
 source_coll_name = 'water_soluble_polymers'
-output_coll_name = 'water_soluble_small'
+output_coll_name = 'water_soluble_reduced'
 flip_term_group_labels = ['paam_modified']
 desired_solvents = (None,) #WATER_TIP3P)
 

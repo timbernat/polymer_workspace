@@ -33,6 +33,8 @@ solv_template    = RESOURCE_PATH/'inp_templates'/'solv_polymer_template_box.inp'
 desired_solvents = (WATER_TIP3P,) # (None,)
 exclusion = 1.0*nanometer
 
+# ------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     # Define derived paths and create manager
     collection_path  = COLL_PATH / poly_source_path.name
