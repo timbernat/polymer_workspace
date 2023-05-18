@@ -1,9 +1,9 @@
 {
-    "total_time_value": 10,
+    "total_time_value": 100,
     "total_time_unit": "nanosecond",
-    "num_samples": 2500,
+    "num_samples": 5000,
     "charge_method": "ABE10_averaged",
-    "report_to_pdb": true,
+    "report_to_pdb": false,
     "reported_state_data": {
         "step": true,
         "time": true,
@@ -26,5 +26,5 @@
     "pressure_unit": "atmosphere",
     "friction_coeff_value": 1,
     "friction_coeff_unit": "/picosecond",
-    "barostat_freq": 25
+    "barostat_freq": 100
 }

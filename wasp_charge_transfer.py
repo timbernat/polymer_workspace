@@ -165,20 +165,12 @@ if __name__ == '__main__':
         mgr_large.update_collection() # update collection to reflect newly created enlarged copies
         for polymer in mgr_large.polymers_list: # copy large structures over
             polymer.populate_pdb(structure_path)
-            polymer.solvate(solvent=desired_solvent, template_path=solv_template, exclusion=exclusion) # assumes only 1 solvent
+            solvated_polymer = polymer.solvate(solvent=desired_solvent, template_path=solv_template, exclusion=exclusion) # assumes only 1 solvent
+            solvated_polymer.create_charged_monomer_file(residue_charges=polymer.monomer_data_charged['charges']) # needed to incorporate solvent charges into charged JSON
             
-        for polymer in mgr_large.polymers_list:
-            if polymer.solvent == desired_solvent:
-                polymer.create_charged_monomer_file(residue_charges=polymer.monomer_data_charged['charges']) # needed to incorporate solvent charges into charged JSON
-    
-    print(mgr_large.polymers.keys())
-
     large_chg_params = ChargingParameters.from_file(large_chg_params_path)
     with ProcessLogHandler(filedir=mgr_large.log_dir, loggers=loggers, proc_name='Charging of large chains', timestamp=True) as msf_handler:
         for i, polymer in enumerate(mgr_large.polymers_list):
             main_logger.info(f'Current molecule: "{polymer.mol_name}" ({i + 1}/{mgr_large.n_mols})') # +1 converts to more human-readable 1-index for step count
             with msf_handler.subhandler(filedir=polymer.logs, loggers=loggers, proc_name='Charging', timestamp=True) as subhandler: # also log actions to individual Polymers
                 obtain_partial_charges(polymer, main_logger, large_chg_params)
-    
-# SIMULATE AND COMPUTE PROPERTIES
-    # main_logger.info('STAGE (4) Run simulation and analysis over large WaSPs, obtain final trajectories and data')

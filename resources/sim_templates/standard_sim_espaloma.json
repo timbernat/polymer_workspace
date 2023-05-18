@@ -3,6 +3,7 @@
     "total_time_unit": "nanosecond",
     "num_samples": 2500,
     "charge_method": "Espaloma_AM1BCC",
+    "report_to_pdb": true,
     "reported_state_data": {
         "step": true,
         "time": true,

@@ -1,9 +1,9 @@
 {
-    "total_time_value": 10,
+    "total_time_value": 1,
     "total_time_unit": "nanosecond",
-    "num_samples": 2500,
+    "num_samples": 500,
     "charge_method": "ABE10_averaged",
-    "report_to_pdb": true,
+    "report_to_pdb": false,
     "reported_state_data": {
         "step": true,
         "time": true,
@@ -20,7 +20,7 @@
     },
     "timestep_value": 2,
     "timestep_unit": "femtosecond",
-    "temperature_value": 300,
+    "temperature_value": 600,
     "temperature_unit": "kelvin",
     "pressure_value": 1,
     "pressure_unit": "atmosphere",
