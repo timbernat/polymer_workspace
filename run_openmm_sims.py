@@ -12,7 +12,7 @@ loggers = [main_logger, *LOGGERS_MASTER]
 # Polymer Imports
 from polysaccharide.solvation.solvents import WATER_TIP3P
 from polysaccharide.representation import Polymer, PolymerManager, filter_factory_by_attr
-from polysaccharide.simulation import SimulationParameters
+from polysaccharide.simulation.records import SimulationParameters
 
 # Static Paths
 COLL_PATH = Path('Collections')

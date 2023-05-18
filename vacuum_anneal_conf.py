@@ -10,10 +10,9 @@ main_logger = logging.getLogger(__name__)
 loggers = [main_logger, *LOGGERS_MASTER]
 
 # Polymer Imports
-from polysaccharide.solvation.solvents import WATER_TIP3P
 from polysaccharide.representation import Polymer, PolymerManager
-from polysaccharide.representation import is_unsolvated, is_charged
-from polysaccharide.simulation import SimulationParameters
+from polysaccharide.representation import is_unsolvated, is_charged, is_base
+from polysaccharide.simulation.records import SimulationParameters
 
 # Static Paths
 COLL_PATH = Path('Collections')
@@ -23,21 +22,18 @@ SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
 
 # ------------------------------------------------------------------------------
 
-src_coll_path = COLL_PATH / 'water_soluble_large_confs'
+src_coll_path = COLL_PATH / 'water_soluble_large_conf'
 sim_param_path = SIM_PARAM_PATH / 'vacuum_anneal_sim_dcd.json'
 num_confs = 2
 
 # ------------------------------------------------------------------------------
 
 # BEGIN CHARGING / SIM LOOP - Perform charge averaging on all target molecules which don't already have averaged LCs; Load forcefield for those which already do 
-def is_unmodified(polymer : Polymer) -> bool:
-    return polymer.mol_name == polymer.base_mol_name
-
 if __name__ == '__main__':
     mgr = PolymerManager(src_coll_path)
     sim_params = SimulationParameters.from_file(sim_param_path)
 
-    @mgr.logging_wrapper(loggers, proc_name=f'Vacuum-anneal conformer generation', filters=(is_unsolvated, is_charged, is_unmodified))
+    @mgr.logging_wrapper(loggers, proc_name=f'Vacuum-anneal conformer generation', filters=(is_unsolvated, is_charged, is_base))
     def vacuum_anneal(polymer : Polymer, main_logger : logging.Logger, sim_params : SimulationParameters, num_confs : int, snapshot_idx : int=-1) -> None:
         '''Run quick vacuum NVT sim at high T'''
         for i in range(num_confs):

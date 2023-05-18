@@ -19,8 +19,7 @@ loggers = [main_logger, *LOGGERS_MASTER]
 # Polymer Imports
 from polysaccharide.representation import Polymer, PolymerManager, has_sims
 from polysaccharide.solvation.solvents import WATER_TIP3P
-from polysaccharide.simulation import SimulationParameters, SimulationPaths
-from polysaccharide.analysis import trajectory, plotprops
+from polysaccharide.analysis import trajectory
 
 # Static Paths
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
