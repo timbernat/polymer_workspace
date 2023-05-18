@@ -48,9 +48,8 @@ loggers = [main_logger, *LOGGERS_MASTER] # loggers from all modules which produc
 sample_dirs = [
     polymer 
         for polymer in mgr.polymers_list
-            if (polymer.solvent in desired_solvents) and polymer.charges
+            if polymer.solvent is not None
 ]
-
 
 proc_name = f'Trajectory analysis'
 
@@ -58,7 +57,8 @@ with ProcessLogHandler(filedir=mgr.log_dir, loggers=loggers, proc_name=proc_name
     for i, polymer in enumerate(sample_dirs):
         main_logger.info(f'Current molecule: "{polymer.mol_name}" ({i + 1}/{len(sample_dirs)})') # +1 converts to more human-readable 1-index for step count
         with msf_handler.subhandler(filedir=polymer.logs, loggers=loggers, proc_name=proc_name, timestamp=True) as subhandler: # also log actions to individual Polymers
-            for sim_folder, sim_paths in polymer.simulation_paths.items():
+            for sim_folder, sim_paths_file in polymer.simulation_paths.items():
+                sim_paths = SimulationPaths.from_file(sim_paths_file)
                 sim_params = SimulationParameters.from_file(sim_paths.sim_params)
                 state_data = pd.read_csv(sim_paths.state_data)
                 main_logger.info(f'Found trajectory from simulation using {sim_params.charge_method} charges')

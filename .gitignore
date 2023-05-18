@@ -14,6 +14,8 @@ polysaccharide/*
 *.job
 *.out
 
-# temporary testing folders
+# figures and plots
 pcharge_heatmaps/*
-logging_test/*
+plots_for_paper/*
+figures_for_paper/*
+colina_data/*

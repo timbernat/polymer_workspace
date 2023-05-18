@@ -3,8 +3,8 @@ from polysaccharide.representation import PolymerManager
 from pathlib import Path
 
 main_ff_xml = Path('resources')/'force_fields'/'openff_constrained-2.0.0.offxml'
-p = Path('Collections') / 'simple_polymers_updated'
+p = Path('Collections') / 'water_soluble_large'
 mgr = PolymerManager(p)
-pdir = mgr.polymers['naturalrubber_solv_water']
+pdir = mgr.polymers['pnipam_modified_solv_water']
 
-ff, lc = write_lib_chgs_from_mono_data(pdir.monomer_data_charged, main_ff_xml, Path('test.offxml'))
+print(pdir.offmol)
