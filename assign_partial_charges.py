@@ -28,7 +28,7 @@ SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
 # src_coll_name = 'water_soluble_small_conf'
 # chg_params_name = 'standard_chg_params.json'
 
-src_coll_name = 'water_soluble_large_confs'
+src_coll_name = 'water_soluble_large_conf'
 chg_params_name = 'long_chain_chg_params.json'
 
 # ------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
 
 # Set parameters here
 small_coll = COLL_PATH / 'water_soluble_reduced'
-new_coll = COLL_PATH / 'water_soluble_large_confs'
+new_coll = COLL_PATH / 'water_soluble_large_conf'
 
 src_file_dir = COMPAT_PDB_PATH / 'water_soluble_polymers'
 structure_dir = src_file_dir / 'water_soluble_polymers_structures' 
