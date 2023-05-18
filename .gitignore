@@ -13,6 +13,8 @@ polysaccharide/*
 # SLURM files
 *.job
 *.out
+slurm_logs/*
+blanca_testing/*
 
 # figures and plots
 pcharge_heatmaps/*
