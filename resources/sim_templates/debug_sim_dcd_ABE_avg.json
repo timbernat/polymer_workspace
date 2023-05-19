@@ -16,7 +16,7 @@
         "progress": false,
         "remainingTime": false,
         "speed": true,
-        "elapsedTime": true
+        "elapsedTime": false
     },
     "timestep_value": 1,
     "timestep_unit": "femtosecond",
