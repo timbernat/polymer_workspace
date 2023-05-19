@@ -24,7 +24,7 @@ loggers = [main_logger, *LOGGERS_MASTER]
 # Polymer Imports
 from polysaccharide.graphics import plotutils
 from polysaccharide.representation import Polymer, PolymerManager, has_sims
-from polysaccharide.analysis import trajectory, statistics
+from polysaccharide.analysis import trajectory, statistics, equilibrium
 
 # Static Paths
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
@@ -47,6 +47,7 @@ CHG_CVTRS = {
     'Charge heatmap 2D' : 'SMARTS',
     'Charge heatmap 3D' : 'CXSMARTS'
 }
+equil_det = equilibrium.BinSegEquilDetector()
 
 # ------------------------------------------------------------------------------
 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
             fig_equil, ax_equil = plotutils.presize_subplots(nrows, ncols)
             for ax, (prop_name, series) in zip(ax_equil, time_series.items()):
                 series = np.array(series)
-                equil_idx = statistics.equil_loc(series)
+                equil_idx = equil_det.equil_loc(series)
                 equil_time = times.to_numpy().flatten()[equil_idx]
                 main_logger.info(f'Determined "{prop_name}" to have equilibrated after time {equil_time}') # TODO : find way to incorporate units into this
 
