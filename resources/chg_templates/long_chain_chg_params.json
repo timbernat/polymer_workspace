@@ -3,8 +3,7 @@
     "overwrite_chg_mono": false,
     "base_ff_path": "resources/force_fields/openff_constrained-2.0.0.offxml",
     "charge_methods": [
-        "Espaloma_AM1BCC",
-        "ABE10_averaged"
+        "Espaloma_AM1BCC"
     ],
-    "averaging_charge_method": "ABE10_exact"
+    "averaging_charge_method": "Espaloma_AM1BCC"
 }
