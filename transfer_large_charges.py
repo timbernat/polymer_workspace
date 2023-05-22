@@ -1,5 +1,4 @@
 '''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
-'''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
 
 # Generic imports
 from pathlib import Path
@@ -70,6 +69,6 @@ if __name__ == '__main__':
     @mgr_large.logging_wrapper(loggers, proc_name='Large structure rectification')
     def assign_large_structures(polymer : Polymer, struct_dir : Path, desired_solvents : tuple[Solvent], template_path : Path, exclusion : float) -> None:
         polymer.populate_pdb(struct_dir) # TOSELF : can't use mgr.populate_collection because this creates a new Polmyer (default None value for charged monomer path overwrite reference)
-        polymer.solvate_multi(desired_solvents, template_path=template_path, exclusion=exclusion)
+        polymer.solvate(desired_solvents, template_path=template_path, exclusion=exclusion)
 
     assign_large_structures(structure_dir, desired_solvents, solv_template, exclusion)
