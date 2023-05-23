@@ -24,7 +24,7 @@ from polysaccharide.representation import Polymer, PolymerManager
 from polysaccharide.representation import is_unsolvated, filter_factory_by_attr
 from polysaccharide.molutils.polymer.building import build_linear_polymer, mbmol_from_mono_smarts
 from polysaccharide.molutils.polymer.abmono import estimate_max_DOP, estimate_chain_len
-from polysaccharide.molutils.polymer.expections import ExcessiveChainLengthError
+from polysaccharide.molutils.polymer.exceptions import ExcessiveChainLengthError
 
 # Static Paths
 COLL_PATH = Path('Collections')
