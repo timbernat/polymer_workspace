@@ -1,35 +1,61 @@
 '''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
 
 # Logging
-from pathlib import Path
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, force=True)
+main_logger = logging.getLogger(__name__)
 
 from polysaccharide import LOGGERS_MASTER
-main_logger = logging.getLogger(__name__)
+from polysaccharide.logutils import ProcessLogHandler
 loggers = [main_logger, *LOGGERS_MASTER]
+
+# Generic imports
+import argparse
+from pathlib import Path
+
+# Resource files
+import importlib_resources as impres
+import resources
+avail_sim_templates = resources.AVAIL_RESOURCES['sim_templates']
 
 # Polymer Imports
 from polysaccharide.solvation.solvents import WATER_TIP3P
-from polysaccharide.representation import Polymer, PolymerManager, filter_factory_by_attr
+from polysaccharide.representation import Polymer, PolymerManager
+from polysaccharide.representation import is_solvated, is_unsolvated, is_charged, is_uncharged, filter_factory_by_attr
 from polysaccharide.simulation.records import SimulationParameters
 
 # Static Paths
 COLL_PATH = Path('Collections')
-RESOURCE_PATH = Path('resources')
-SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
+COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
+RESOURCE_PATH = impres.files(resources)
+SIM_PARAM_PATH = impres.files(resources.sim_templates)
 
+# CLI arg parsing
 # ------------------------------------------------------------------------------
 
-src_coll_path = COLL_PATH / 'simple_polymers'
-# src_coll_path = COLL_PATH / 'water_soluble_large'
-mgr = PolymerManager(src_coll_path)
+parser = argparse.ArgumentParser(
+    description='Dispatches chosen charged molecules to OpenMM for simulation'
+)
+parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
+parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for charging (available files are {", ".join(avail_sim_templates)})', action='store', nargs='+', required=True)
+parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
+parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', const='unsolv')
 
-desired_solvents = (WATER_TIP3P,)
-desired_mols = ('polyvinylchloride_solv_water',)
-sim_param_paths = [
-    SIM_PARAM_PATH / 'pilot_sim_ABE_avg_dcd copy.json'
-]
+args = parser.parse_args()
+
+# Arg processing
+# ------------------------------------------------------------------------------
+
+## defining paths
+src_coll_path = COLL_PATH / args.source_name
+
+sim_param_paths = []
+for sim_param_name in args.sim_params:
+    sim_param_path = SIM_PARAM_PATH / sim_param_name
+    if not sim_param_path.suffix:
+        sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
+    sim_param_paths.append(sim_param_path)
+
 # sim_param_paths = [
 #     SIM_PARAM_PATH / 'long_sim_ABE_avg_dcd.json',
 #     SIM_PARAM_PATH / 'long_sim_espaloma_dcd.json',
@@ -38,21 +64,35 @@ sim_param_paths = [
 #     SIM_PARAM_PATH / 'standard_sim_ABE_avg_dcd.json',
 #     SIM_PARAM_PATH / 'standard_sim_espaloma_dcd.json',
 # ]
+# sim_param_paths = [
+#     SIM_PARAM_PATH / 'short_sim_ABE_avg_dcd.json',
+#     SIM_PARAM_PATH / 'short_sim_espaloma_dcd.json',
+# ]
+
+## defining mol filters
+filters = [is_charged]
+if args.mol_names is not None:
+    desired_mol = filter_factory_by_attr('base_mol_name', lambda name : name in args.mol_names)
+    filters.append(desired_mol)
+
+if args.solv_type == 'unsolv':
+    filters.append(is_unsolvated)
+elif args.solv_type == 'solv':
+    filters.append(is_solvated)
+else:
+    pass # self-documenting placeholder (doesn;t actually do anything)
 
 # ------------------------------------------------------------------------------
 
 # BEGIN CHARGING / SIM LOOP - Perform charge averaging on all target molecules which don't already have averaged LCs; Load forcefield for those which already do 
-solvated = filter_factory_by_attr(attr_name='solvent', condition=lambda solv : solv in desired_solvents)
-charged  = filter_factory_by_attr(attr_name='charges')
-selected = filter_factory_by_attr(attr_name='mol_name', condition=lambda name : name in desired_mols)
+if __name__ == '__main__':
+    mgr = PolymerManager(src_coll_path)
+    for sim_param_path in sim_param_paths:
+        sim_params = SimulationParameters.from_file(sim_param_path)
 
-for sim_param_path in sim_param_paths:
-    sim_params = SimulationParameters.from_file(sim_param_path)
-    proc_name = f'Simulation {sim_params.charge_method}'
+        @mgr.logging_wrapper(loggers, proc_name=f'Simulation {sim_params.charge_method}', filters=filters)
+        def simulate(polymer : Polymer, sim_params : SimulationParameters) -> None:
+            '''Run single NPT-ensemble simulation'''
+            polymer.run_simulation(sim_params, ensemble='NPT')
 
-    @mgr.logging_wrapper(loggers, proc_name=proc_name, filters=(solvated, charged, selected))
-    def simulate(polymer : Polymer, sim_params : SimulationParameters) -> None:
-        '''Run single NPT-ensemble simulation'''
-        polymer.run_simulation(sim_params, ensemble='NPT')
-
-    simulate(sim_params)
+        simulate(sim_params)
