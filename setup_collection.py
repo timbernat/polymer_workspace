@@ -1,4 +1,4 @@
-'''For initializing a managed collection of Polymers from directories of structure and monomer files'''
+'''(Re)populate a collection of Polymer directories from a source directory of structural and monomer information'''
 
 # Logging
 import logging
@@ -33,7 +33,7 @@ RESOURCE_PATH = impres.files(resources)
 # ------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(
-    description='(Re)populate a collection of Polymer directories from a source directory of structural and monomer information'
+    description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the directory in the set compatible_pdbs folder containing the target structures', required=True)#, action='store_const'), const='simple_polymers')
 parser.add_argument('-r' , '--reset'       , help='If set, will delete the target collection if it already exists'                , action='store_true')

@@ -1,4 +1,4 @@
-'''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
+'''Dispatches chosen charged molecules to OpenMM for simulation'''
 
 # Logging
 import logging
@@ -34,12 +34,12 @@ SIM_PARAM_PATH = impres.files(resources.sim_templates)
 # ------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(
-    description='Dispatches chosen charged molecules to OpenMM for simulation'
+    description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for charging (available files are {", ".join(avail_sim_templates)})', action='store', nargs='+', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', const='unsolv')
+parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "solv")', choices=('solv', 'unsolv', 'all'), nargs='?', const='solv')
 
 args = parser.parse_args()
 

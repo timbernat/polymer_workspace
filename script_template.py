@@ -1,7 +1,5 @@
 '''Generic template for defining CLI-executable polymer action scripts'''
 
-'''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
-
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
@@ -34,7 +32,7 @@ RESOURCE_PATH = impres.files(resources)
 # ------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(
-    description=''
+    description=__doc__ # use script docstring as help description 
 )
 parser.add_argument('-src', '--source_name'  , help='The name of the target collection of Polymers', required=True)
 

@@ -1,4 +1,4 @@
-'''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
+'''Assigns partial charges to the Polymers in a collection, with optional filtering by name and solvent type'''
 
 # Logging
 import logging
@@ -32,7 +32,7 @@ RESOURCE_PATH = impres.files(resources)
 # ------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(
-    description='Assigns partial charges to the Polymers in a collection, with optional filtering'
+    description=__doc__
 )
 parser.add_argument('-src', '--source_name' , help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-cp', '--charge_params', help=f'Name of the charging parameters preset file to load for charging (available files are {", ".join(avail_chg_templates)})', required=True)
