@@ -1,10 +1,17 @@
-from polysaccharide.charging.averaging import write_lib_chgs_from_mono_data
-from polysaccharide.representation import PolymerManager
 from pathlib import Path
 
-main_ff_xml = Path('resources')/'force_fields'/'openff_constrained-2.0.0.offxml'
-p = Path('Collections') / 'water_soluble_large'
-mgr = PolymerManager(p)
-pdir = mgr.polymers['pnipam_modified_solv_water']
+from polysaccharide.representation import PolymerManager
+from polysaccharide.molutils.polymer.building import build_linear_polymer, mbmol_from_mono_smarts
 
-print(pdir.offmol)
+p = Path('Collections')
+
+mgr = PolymerManager(p / 'water_soluble_large')
+pdir = mgr.polymers['peg_modified']
+mono_smarts = pdir.monomer_data['monomers']
+
+for name, smarts in mono_smarts.items():
+    print(name)
+    mbmol = mbmol_from_mono_smarts(smarts)
+
+chain = build_linear_polymer(monomer_smarts=mono_smarts, DOP=10)
+print(chain)
