@@ -1,8 +1,10 @@
 {
-    "total_time_value": 1,
-    "total_time_unit": "picosecond",
-    "num_samples": 500,
-    "charge_method": "ABE10_exact",
+    "total_time_value": 100,
+    "total_time_unit": "nanosecond",
+    "num_samples": 5000,
+    "charge_method": "ABE10_averaged",
+    "ensemble": "NVT",
+    "periodic": true,
     "report_to_pdb": false,
     "reported_state_data": {
         "step": true,
@@ -18,7 +20,7 @@
         "speed": true,
         "elapsedTime": false
     },
-    "timestep_value": 1,
+    "timestep_value": 2,
     "timestep_unit": "femtosecond",
     "temperature_value": 300,
     "temperature_unit": "kelvin",
@@ -26,5 +28,5 @@
     "pressure_unit": "atmosphere",
     "friction_coeff_value": 1,
     "friction_coeff_unit": "/picosecond",
-    "barostat_freq": 1
+    "barostat_freq": 100
 }

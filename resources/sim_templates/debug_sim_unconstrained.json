@@ -20,7 +20,7 @@
         "speed": true,
         "elapsedTime": false
     },
-    "timestep_value": 2,
+    "timestep_value": 1,
     "timestep_unit": "femtosecond",
     "temperature_value": 300,
     "temperature_unit": "kelvin",

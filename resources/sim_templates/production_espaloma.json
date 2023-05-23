@@ -3,6 +3,8 @@
     "total_time_unit": "nanosecond",
     "num_samples": 5000,
     "charge_method": "Espaloma_AM1BCC",
+    "ensemble": "NPT",
+    "periodic": true,
     "report_to_pdb": false,
     "reported_state_data": {
         "step": true,
