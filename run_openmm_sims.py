@@ -56,19 +56,6 @@ for sim_param_name in args.sim_params:
         sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
     sim_param_paths.append(sim_param_path)
 
-# sim_param_paths = [
-#     SIM_PARAM_PATH / 'long_sim_ABE_avg_dcd.json',
-#     SIM_PARAM_PATH / 'long_sim_espaloma_dcd.json',
-# ]
-# sim_param_paths = [
-#     SIM_PARAM_PATH / 'standard_sim_ABE_avg_dcd.json',
-#     SIM_PARAM_PATH / 'standard_sim_espaloma_dcd.json',
-# ]
-# sim_param_paths = [
-#     SIM_PARAM_PATH / 'short_sim_ABE_avg_dcd.json',
-#     SIM_PARAM_PATH / 'short_sim_espaloma_dcd.json',
-# ]
-
 ## defining mol filters
 filters = [is_charged]
 if args.mol_names is not None:
@@ -93,6 +80,6 @@ if __name__ == '__main__':
         @mgr.logging_wrapper(loggers, proc_name=f'Simulation {sim_params.charge_method}', filters=filters)
         def simulate(polymer : Polymer, sim_params : SimulationParameters) -> None:
             '''Run single NPT-ensemble simulation'''
-            polymer.run_simulation(sim_params, ensemble='NPT')
+            polymer.run_simulation(sim_params)
 
         simulate(sim_params)

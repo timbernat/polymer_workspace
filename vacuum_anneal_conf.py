@@ -23,7 +23,7 @@ SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
 # ------------------------------------------------------------------------------
 
 src_coll_path = COLL_PATH / 'water_soluble_large_conf'
-sim_param_path = SIM_PARAM_PATH / 'vacuum_anneal_sim_dcd.json'
+sim_param_path = SIM_PARAM_PATH / 'vacuum_anneal.json'
 num_confs = 2
 
 # ------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 clone_sims=False
             )
 
-            polymer.run_simulation(sim_params, ensemble='NVT', periodic=False)
+            polymer.run_simulation(sim_params)
             
             main_logger.info('Extracting final conformation from simulation')
             traj = polymer.load_traj(polymer.newest_sim_dir)
