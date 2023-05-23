@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "all")', choices=('solv', 'unsolv', 'all'), nargs='?', const='all')
+parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "all")', choices=('solv', 'unsolv', 'all'), nargs='?', default='all')
 parser.add_argument('-t', '--sim_time'     , help='If set, will only analyze trajectories run for this number of nanoseconds', action='store', type=float)
 
 args = parser.parse_args()

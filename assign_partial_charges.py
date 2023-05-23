@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-src', '--source_name' , help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-cp', '--charge_params', help=f'Name of the charging parameters preset file to load for charging (available files are {", ".join(avail_chg_templates)})', required=True)
 parser.add_argument('-n', '--mol_names'     , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solv_type'     , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', const='unsolv')
+parser.add_argument('-s', '--solv_type'     , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', default='unsolv')
 
 args = parser.parse_args()
 
