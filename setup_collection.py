@@ -36,6 +36,7 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the directory in the set compatible_pdbs folder containing the target structures', required=True)#, action='store_const'), const='simple_polymers')
+parser.add_argument('-n' , '--coll_name'   , help='Name of the collection to output to. If not set, will default to the structures source name', action='store')
 parser.add_argument('-r' , '--reset'       , help='If set, will delete the target collection if it already exists'                , action='store_true')
 parser.add_argument('-ps', '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection'        , action='store_true')
 parser.add_argument('-pl', '--purge_logs'  , help='If set, will delete any extant log files in the target collection'             , action='store_true')
@@ -56,9 +57,12 @@ exclusion = 1.0*nanometer
 
 ## defining paths
 poly_source_path = COMPAT_PDB_PATH / args.source_name
-collection_path  = COLL_PATH / poly_source_path.name
 structure_path   = poly_source_path / f'{poly_source_path.name}_structures'
 monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
+
+if args.coll_name is None:
+    args.coll_name = args.source_name
+collection_path  = COLL_PATH / args.coll_name
 
 # Execution
 # ------------------------------------------------------------------------------
