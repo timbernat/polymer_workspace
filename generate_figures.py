@@ -1,5 +1,13 @@
 '''For transferring charged monomer information to full-sized WaSPs once ABE10 charging is done on reduced WaSPs'''
 
+# Logging
+import logging
+logging.basicConfig(level=logging.INFO, force=True)
+
+from polysaccharide import LOGGERS_MASTER
+main_logger = logging.getLogger(__name__)
+loggers = [main_logger, *LOGGERS_MASTER]
+
 # Generic imports
 import re
 from pathlib import Path
@@ -10,16 +18,13 @@ from itertools import combinations
 from math import ceil
 import numpy as np
 import pandas as pd
+
+import matplotlib.pyplot as plt
 from openmm.unit import nanosecond
 
-# Logging
-import logging
-logging.basicConfig(level=logging.INFO)
-import matplotlib.pyplot as plt
-
-from polysaccharide import LOGGERS_MASTER
-main_logger = logging.getLogger(__name__)
-loggers = [main_logger, *LOGGERS_MASTER]
+# Resource files
+import importlib_resources as impres
+import resources
 
 # Polymer Imports
 from polysaccharide.graphics import plotutils
@@ -30,9 +35,9 @@ from polysaccharide.analysis import trajectory, statistics, equilibrium
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
 COLL_PATH = Path('Collections')
 
-RESOURCE_PATH = Path('resources')
-CHG_PARAM_PATH = RESOURCE_PATH / 'chg_templates'
-SIM_PARAM_PATH = RESOURCE_PATH / 'sim_templates'
+RESOURCE_PATH = impres.files(resources)
+CHG_PARAM_PATH = impres.files(resources.chg_templates)
+SIM_PARAM_PATH = impres.files(resources.sim_templates)
 
 # ------------------------------------------------------------------------------
 
