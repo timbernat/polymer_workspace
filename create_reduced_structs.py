@@ -13,6 +13,7 @@ loggers = [main_logger, *LOGGERS_MASTER]
 import argparse
 from pathlib import Path
 from shutil import copyfile
+from typing import Optional
 
 # Resource files
 import importlib_resources as impres
@@ -65,7 +66,8 @@ filters = [is_unsolvated]
 
 # defining monomer-specific parameters
 CHAIN_LEN_LIMIT = 300 
-flip_term_group_labels = ['paam_modified'] # hard-coded for now
+flip_term_group_labels = ['paam_modified', 'peg_modified'] # hard-coded for now
+monomer_blacklist = ['paam_SPECIAL_TERM']
 
 ## Guarantee that exactly one of the mutually exclusive chain length specification is provided
 if not (args.max_chain_len or args.DOP):
@@ -81,15 +83,14 @@ if __name__ == '__main__':
     src_mgr = PolymerManager(source_path)
 
     @src_mgr.logging_wrapper(loggers, proc_name='Structure reduction', filters=filters)
-    def generate_reduced_pdbs(polymer : Polymer, flip_term_group_labels : list[str], chain_len_limit : int=CHAIN_LEN_LIMIT):
+    def generate_reduced_pdbs(polymer : Polymer, flip_term_group_labels : list[str], monomer_blacklist : Optional[list[str]]=None, chain_len_limit : int=CHAIN_LEN_LIMIT):
         monomer_smarts = polymer.monomer_data['monomers']
+        if monomer_blacklist is not None: # get rid of any pesky special monomers which screw up the head-tail group finding process
+            for banned_mono in monomer_blacklist:
+                if banned_mono in monomer_smarts:
+                    monomer_smarts.pop(banned_mono)
         
-        reverse = False
-        if polymer.mol_name in flip_term_group_labels:
-            monomer_smarts.pop('paam_SPECIAL_TERM')   # special case needed for extra messy term group in PAAM...
-            reverse = True                      # ...TODO : find generalized way to isolate head and tail groups from larger collection of monomer_smarts
-
-        if args.DOP: # NOTe : this only works as intended because of the exclusivity check during arg processing
+        if args.DOP: # NOTE : this only works as intended because of the exclusivity check during arg processing
             DOP = args.DOP
             max_chain_len = estimate_chain_len(monomer_smarts, DOP)
         if args.max_chain_len:
@@ -99,8 +100,8 @@ if __name__ == '__main__':
         if max_chain_len > chain_len_limit:
             raise ExcessiveChainLengthError(f'Cannot create reduction with over {CHAIN_LEN_LIMIT} atoms (requested {max_chain_len})')
         
-        chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=reverse)
+        chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=(polymer.mol_name in flip_term_group_labels))
         chain.save(str(reduced_structures/f'{polymer.mol_name}.pdb'), overwrite=True)
         copyfile(polymer.monomer_file, reduced_monomers/f'{polymer.mol_name}.json')
 
-    generate_reduced_pdbs(flip_term_group_labels=flip_term_group_labels)
+    generate_reduced_pdbs(flip_term_group_labels=flip_term_group_labels, monomer_blacklist=monomer_blacklist)
