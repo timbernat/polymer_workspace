@@ -52,7 +52,7 @@ if args.output_name is None:
 # defining paths
 source_path = COLL_PATH / args.source_name
 
-reduced_dir = COMPAT_PDB_PATH / args.output_name
+reduced_dir = COMPAT_PDB_PATH / args.output_name # CRITICAL : Note that this is a PDB STRUCTURES path, NOT a COLLECTION path!!
 reduced_structures = reduced_dir / f'{reduced_dir.name}_structures'
 reduced_monomers   = reduced_dir / f'{reduced_dir.name}_monomers'
 
