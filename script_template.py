@@ -41,8 +41,11 @@ args = parser.parse_args()
 # Arg processing
 # ------------------------------------------------------------------------------
 
+## defining paths
 source_path = COLL_PATH / args.source_name
 ...
+
+## defining mol filters
 filters = [identity]
 
 # Execution
