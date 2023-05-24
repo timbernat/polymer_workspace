@@ -22,7 +22,7 @@ avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 # Polymer Imports
 from polysaccharide.representation import Polymer, PolymerManager
 from polysaccharide.representation import is_unsolvated, filter_factory_by_attr
-from polysaccharide.molutils.polymer.building import build_linear_polymer, mbmol_from_mono_smarts
+from polysaccharide.molutils.polymer.building import build_linear_polymer
 from polysaccharide.molutils.polymer.abmono import estimate_max_DOP, estimate_chain_len
 from polysaccharide.molutils.polymer.exceptions import ExcessiveChainLengthError
 
@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(
     description=__doc__ # use script docstring as help description 
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-out', '--output_name', help='The name of the new, reduced collection of Polymers')
+parser.add_argument('-out', '--output_name', help='The name of the directory to output generated structures to (within the set PDB folder)')
 parser.add_argument('-N', '--max_chain_len', help='Maximum number of atoms in any of the reduced chain generated. If this is specified, CANNOT specify DOP', type=int)
 parser.add_argument('-D', '--DOP',           help='Degree of polymerization, the number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
 

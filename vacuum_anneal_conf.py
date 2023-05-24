@@ -74,7 +74,6 @@ if __name__ == '__main__':
                 clone_charges=True,
                 clone_sims=False
             )
-
             polymer.run_simulation(sim_params)
             
             main_logger.info('Extracting final conformation from simulation')
@@ -83,4 +82,4 @@ if __name__ == '__main__':
             main_logger.info('Applying new conformation to clone')
             new_conf.save(conf_clone.structure_file) # overwrite the clone's structure with the new conformer
 
-    vacuum_anneal(main_logger, sim_params, num_new_confs=args.replicates) # -1 accounts for original
+    vacuum_anneal(main_logger, sim_params, num_new_confs=args.num_replicates) # -1 accounts for original
