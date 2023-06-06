@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-strct', '--structures', help='The name of the directory in the set compatible_pdbs folder containing the target pdb and monomer directories', required=True)
-parser.add_argument('-out', '--output_name' , help='The name of the output collection of Polymers', required=True)
+parser.add_argument('-out', '--output_name' , help='The name of the output collection of Polymers')
 parser.add_argument('-r'  , '--reset'       , help='If set, will delete the target collection if it already exists'        , action='store_true')
 parser.add_argument('-ps' , '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection', action='store_true')
 parser.add_argument('-pl' , '--purge_logs'  , help='If set, will delete any extant log files in the target collection'     , action='store_true')
