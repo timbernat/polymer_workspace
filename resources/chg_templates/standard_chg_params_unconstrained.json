@@ -1,7 +1,7 @@
 {
     "overwrite_ff_xml": false,
     "overwrite_chg_mono": false,
-    "base_ff_path": "resources/force_fields/openff_unconstrained-2.0.0.offxml",
+    "base_ff_name": "openff_unconstrained-2.0.0.offxml",
     "charge_methods": [
         "ABE10_exact",
         "Espaloma_AM1BCC"
