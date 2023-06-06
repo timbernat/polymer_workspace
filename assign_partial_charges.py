@@ -38,6 +38,7 @@ parser.add_argument('-src', '--source_name' , help='The name of the target colle
 parser.add_argument('-cp', '--charge_params', help=f'Name of the charging parameters preset file to load for charging (available files are {", ".join(avail_chg_templates)})', required=True)
 parser.add_argument('-n', '--mol_names'     , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
 parser.add_argument('-s', '--solv_type'     , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', default='unsolv')
+parser.add_argument('-o', '--overwrite'     , help='Whether to permit charge assignment to molecules which have already had charges assigned', action='store_true')
 
 args = parser.parse_args()
 
@@ -53,7 +54,11 @@ if not chg_params_path.suffix:
 chg_params = ChargingParameters.from_file(chg_params_path)
 
 ## defining mol filters
-filters = [is_uncharged]
+filters = []
+
+if not args.overwrite:
+    filters.append(is_uncharged) # prevent recharge of charged molecules if overwrite is not explicitly permitted
+
 if args.mol_names is not None:
     desired_mol = filter_factory_by_attr('base_mol_name', lambda name : name in args.mol_names)
     filters.append(desired_mol)
