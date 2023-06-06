@@ -41,15 +41,11 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in', action='store', nargs='+')
+parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default='WATER_TIP3P    ')
 parser.add_argument('-t', '--template'     , help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
 parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=int, default=1)
 
 args = parser.parse_args()
-
-# Fixed parameters
-# ------------------------------------------------------------------------------
-exclusion = 1.0*nanometer
 
 # Arg processing
 # ------------------------------------------------------------------------------
@@ -80,8 +76,10 @@ if args.mol_names is not None:
 if __name__ == '__main__':
     mgr = PolymerManager(source_path)
 
-    @mgr.logging_wrapper(loggers, proc_name='Solvation', filters=filters)
-    def solvate_collection(polymer : Polymer, solvents : Iterable[Solvent], template_path : Path, exclusion : float) -> None:
-        polymer.solvate(solvents, template_path=template_path, exclusion=exclusion)
+    solvate_collection = mgr.logging_wrapper(
+        loggers=loggers,
+        proc_name='Solvation',
+        filters=filters
+    )(Polymer.solvate)
 
     solvate_collection(solvents=desired_solvents, template_path=solv_template, exclusion=exclusion)
