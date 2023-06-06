@@ -35,12 +35,11 @@ RESOURCE_PATH = impres.files(resources)
 parser = argparse.ArgumentParser(
     description=__doc__
 )
-parser.add_argument('-src', '--source_name', help='The name of the directory in the set compatible_pdbs folder containing the target structures', required=True)#, action='store_const'), const='simple_polymers')
-parser.add_argument('-n' , '--coll_name'   , help='Name of the collection to output to. If not set, will default to the structures source name', action='store')
-parser.add_argument('-r' , '--reset'       , help='If set, will delete the target collection if it already exists'                , action='store_true')
-parser.add_argument('-ps', '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection'        , action='store_true')
-parser.add_argument('-pl', '--purge_logs'  , help='If set, will delete any extant log files in the target collection'             , action='store_true')
-parser.add_argument('-s' , '--solvate'     , help='If set, will also create copy of each Polymer solvated in a box of TIP3P water', action='store_true')
+parser.add_argument('-strct', '--structures', help='The name of the directory in the set compatible_pdbs folder containing the target pdb and monomer directories', required=True)
+parser.add_argument('-out', '--output_name' , help='The name of the output collection of Polymers', required=True)
+parser.add_argument('-r'  , '--reset'       , help='If set, will delete the target collection if it already exists'        , action='store_true')
+parser.add_argument('-ps' , '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection', action='store_true')
+parser.add_argument('-pl' , '--purge_logs'  , help='If set, will delete any extant log files in the target collection'     , action='store_true')
 
 args = parser.parse_args()
 # args = parser.parse_args('-src simple_polymers -r -ps -pl -s'.split())
@@ -56,13 +55,13 @@ exclusion = 1.0*nanometer
 # ------------------------------------------------------------------------------
 
 ## defining paths
-poly_source_path = COMPAT_PDB_PATH / args.source_name
+poly_source_path = COMPAT_PDB_PATH / args.structures
 structure_path   = poly_source_path / f'{poly_source_path.name}_structures'
 monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
 
-if args.coll_name is None:
-    args.coll_name = args.source_name
-collection_path  = COLL_PATH / args.coll_name
+if args.output_name is None:
+    args.output_name = args.structures
+collection_path  = COLL_PATH / args.output_name
 
 # Execution
 # ------------------------------------------------------------------------------
@@ -84,5 +83,3 @@ if __name__ == '__main__':
 
         if not mgr.polymers: # will be empty if not yet instantiated or if reset prior
             mgr.populate_collection(struct_dir=structure_path, monomer_dir=monomer_path)
-            if args.solvate:
-                mgr.solvate_collection(desired_solvents, template_path=solv_template, exclusion=exclusion)
