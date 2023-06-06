@@ -60,7 +60,6 @@ elif args.solv_type == 'solv':
 else:
     pass # self-documenting placeholder (doesn;t actually do anything)
 
-
 has_binary_traj = lambda sim_paths, sim_params : (sim_params.report_to_pdb == False)
 sim_dir_filters = [has_binary_traj]
 

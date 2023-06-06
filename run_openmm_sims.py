@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for charging (available files are {", ".join(avail_sim_templates)})', action='store', nargs='+', required=True)
+parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for simulation (available files are {", ".join(avail_sim_templates)})', action='store', nargs='+', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
 parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "solv")', choices=('solv', 'unsolv', 'all'), nargs='?', default='solv')
 
@@ -77,9 +77,10 @@ if __name__ == '__main__':
     for sim_param_path in sim_param_paths:
         sim_params = SimulationParameters.from_file(sim_param_path)
 
-        @mgr.logging_wrapper(loggers, proc_name=f'Simulation {sim_params.charge_method}', filters=filters)
-        def simulate(polymer : Polymer, sim_params : SimulationParameters) -> None:
-            '''Run single NPT-ensemble simulation'''
-            polymer.run_simulation(sim_params)
+        simulate = mgr.logging_wrapper(
+            loggers=loggers,
+            proc_name=f'Simulation {sim_params.charge_method}',
+            filters=filters
+        )(Polymer.run_simulation)
 
         simulate(sim_params)

@@ -26,7 +26,7 @@ from polysaccharide.simulation.records import SimulationParameters
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
+RESOURCE_PATH  = impres.files(resources)
 SIM_PARAM_PATH = impres.files(resources.sim_templates)
 
 # CLI arg parsing
@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(
     description=__doc__ # use script docstring as help description 
 )
 parser.add_argument('-src', '--source_name' , help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-sim', '--sim_params'  , help='The name of the target collection of Polymers', default='vacuum_anneal.json')
+parser.add_argument('-sim', '--sim_params'  , help='Name of the simulation parameters preset file to load for simulation', default='vacuum_anneal.json')
 parser.add_argument('-r', '--num_replicates', help='Number of total conformers to generate (not counting the original)', type=int, default=4)
 
 args = parser.parse_args()
