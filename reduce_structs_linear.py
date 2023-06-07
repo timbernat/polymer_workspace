@@ -1,4 +1,4 @@
-'''Creates directory of reduced-chain-length structure PDBs and monomer JSONs from a collection of Polymers'''
+'''Creates directory of reduced-chain-length structure PDBs and monomer JSONs from a collection of linear Polymers'''
 
 # Logging
 import logging
@@ -13,7 +13,7 @@ loggers = [main_logger, *LOGGERS_MASTER]
 import argparse
 from pathlib import Path
 from shutil import copyfile
-from typing import Optional
+from typing import Iterable
 
 # Resource files
 import importlib_resources as impres
@@ -38,10 +38,12 @@ RESOURCE_PATH = impres.files(resources)
 parser = argparse.ArgumentParser(
     description=__doc__ # use script docstring as help description 
 )
-parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-out', '--output_name', help='The name of the directory to output generated structures to (within the set PDB folder)')
-parser.add_argument('-N', '--max_chain_len', help='Maximum number of atoms in any of the reduced chain generated. If this is specified, CANNOT specify DOP', type=int)
-parser.add_argument('-D', '--DOP',           help='Degree of polymerization, the number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
+parser.add_argument('-src', '--source_name'    , help='The name of the target collection of Polymers', required=True)
+parser.add_argument('-out', '--output_name'    , help='The name of the directory to output generated structures to (within the set PDB folder)')
+parser.add_argument('-N', '--max_chain_len'    , help='Maximum number of atoms in any of the reduced chain generated. If this is specified, CANNOT specify DOP', type=int)
+parser.add_argument('-D', '--DOP'              , help='The number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
+parser.add_argument('-lim', '--chain_len_limit', help='The maximum allowable size for a chain to be built to; any chains attempted to be built larger than this limit will raise an error', type=int, default=300)
+parser.add_argument('-f', '--flip_term_labels' , help='Names of the chains on which to reverse the order of head/tail terminal group labels (only works for linear homopolymers!)', action='store', nargs='+', default=tuple())
 
 args = parser.parse_args()
 if args.output_name is None:
@@ -49,6 +51,12 @@ if args.output_name is None:
 
 # Arg processing
 # ------------------------------------------------------------------------------
+## Guarantee that exactly one of the mutually exclusive chain length specification is provided
+if not (args.max_chain_len or args.DOP):
+    raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided neither)')
+
+if args.max_chain_len and args.DOP:
+    raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided both)')
 
 # defining paths
 source_path = COLL_PATH / args.source_name
@@ -64,18 +72,6 @@ reduced_structures.mkdir(exist_ok=True)
 # defining filters
 filters = [is_unsolvated]
 
-# defining monomer-specific parameters
-CHAIN_LEN_LIMIT = 300 
-flip_term_group_labels = ['paam_modified', 'peg_modified'] # hard-coded for now
-monomer_blacklist = ['paam_SPECIAL_TERM']
-
-## Guarantee that exactly one of the mutually exclusive chain length specification is provided
-if not (args.max_chain_len or args.DOP):
-    raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided neither)')
-
-if args.max_chain_len and args.DOP:
-    raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided both)')
-    
 # Execution
 # ------------------------------------------------------------------------------
 
@@ -83,25 +79,20 @@ if __name__ == '__main__':
     src_mgr = PolymerManager(source_path)
 
     @src_mgr.logging_wrapper(loggers, proc_name='Structure reduction', filters=filters)
-    def generate_reduced_pdbs(polymer : Polymer, flip_term_group_labels : list[str], monomer_blacklist : Optional[list[str]]=None, chain_len_limit : int=CHAIN_LEN_LIMIT):
-        monomer_smarts = polymer.monomer_data['monomers']
-        if monomer_blacklist is not None: # get rid of any pesky special monomers which screw up the head-tail group finding process
-            for banned_mono in monomer_blacklist:
-                if banned_mono in monomer_smarts:
-                    monomer_smarts.pop(banned_mono)
-        
+    def generate_reduced_pdbs(polymer : Polymer, flip_term_labels : Iterable[str], chain_len_limit : int):
+        monomer_smarts = polymer.monomer_info.monomers # create copy to avoid popping from original
         if args.DOP: # NOTE : this only works as intended because of the exclusivity check during arg processing
-            DOP = args.DOP
+            DOP = args.DOP # TODO : inject as argument rather than calling global
             max_chain_len = estimate_chain_len(monomer_smarts, DOP)
         if args.max_chain_len:
             max_chain_len = args.max_chain_len
             DOP = estimate_max_DOP(monomer_smarts, max_chain_len)
         
         if max_chain_len > chain_len_limit:
-            raise ExcessiveChainLengthError(f'Cannot create reduction with over {CHAIN_LEN_LIMIT} atoms (requested {max_chain_len})')
+            raise ExcessiveChainLengthError(f'Cannot create reduction with over {chain_len_limit} atoms (requested {max_chain_len})')
         
-        chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=(polymer.mol_name in flip_term_group_labels))
+        chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=(polymer.mol_name in flip_term_labels))
         chain.save(str(reduced_structures/f'{polymer.mol_name}.pdb'), overwrite=True)
-        copyfile(polymer.monomer_file, reduced_monomers/f'{polymer.mol_name}.json')
+        copyfile(polymer.monomer_file_uncharged, reduced_monomers/f'{polymer.mol_name}.json')
 
-    generate_reduced_pdbs(flip_term_group_labels=flip_term_group_labels, monomer_blacklist=monomer_blacklist)
+    generate_reduced_pdbs(flip_term_labels=args.flip_term_labels, chain_len_limit=args.chain_len_limit)
