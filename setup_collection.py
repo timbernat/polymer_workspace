@@ -42,14 +42,6 @@ parser.add_argument('-ps' , '--purge_sims'  , help='If set, will delete any exta
 parser.add_argument('-pl' , '--purge_logs'  , help='If set, will delete any extant log files in the target collection'     , action='store_true')
 
 args = parser.parse_args()
-# args = parser.parse_args('-src simple_polymers -r -ps -pl -s'.split())
-
-# Fixed parameters
-# ------------------------------------------------------------------------------
-
-solv_template    = RESOURCE_PATH/'inp_templates'/'solv_polymer_template_box.inp'
-desired_solvents = (WATER_TIP3P,) # (None,)
-exclusion = 1.0*nanometer
 
 # Arg processing
 # ------------------------------------------------------------------------------
