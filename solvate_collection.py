@@ -41,9 +41,9 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default='WATER_TIP3P    ')
+parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
 parser.add_argument('-t', '--template'     , help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
-parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=int, default=1)
+parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
 
 args = parser.parse_args()
 
