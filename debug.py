@@ -7,7 +7,7 @@ p = Path('Collections')
 
 mgr = PolymerManager(p / 'water_soluble_large')
 pdir = mgr.polymers['peg_modified']
-mono_smarts = pdir.monomer_data['monomers']
+mono_smarts = pdir.monomer_info.monomers
 
 for name, smarts in mono_smarts.items():
     print(name)
