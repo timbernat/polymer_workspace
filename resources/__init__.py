@@ -3,18 +3,22 @@ from typing import Iterable
 
 import pkgutil, importlib
 import importlib.resources as impres
+
 import logging
 LOGGER = logging.getLogger(__name__)
 
-def non_dunder(path : Path) -> Iterable[str]:
-    '''Return all subpaths of a directory path which contain no double underscores'''
-    assert(path.is_dir())
-    return [file.name 
-        for file in path.iterdir()
-            if '__' not in file.name
+def non_dunder(dir : Path) -> Iterable[str]:
+    '''Return all subpaths of a directory dir which contain no double underscores'''
+    assert(dir.is_dir())
+    return [
+        path
+            for path in dir.iterdir()
+                if '__' not in path.name
     ]
 
-AVAIL_RESOURCES = {} # load submodules, record available file assets
+RESOURCE_PATH = impres.files(__package__)
+
+AVAIL_RESOURCES = {} # load submodules, record available path assets
 for _loader, _module_name, _ispkg in pkgutil.iter_modules(__path__):
     module = importlib.import_module(f'{__package__}.{_module_name}')
     globals()[_module_name] = module # register module to namespace
