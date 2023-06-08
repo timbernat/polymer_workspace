@@ -30,9 +30,9 @@ import resources
 from polysaccharide.graphics import plotutils
 from polysaccharide.analysis import trajectory, statistics, equilibrium
 
-from polysaccharide.polymers.representation import Polymer
-from polysaccharide.polymers.management import PolymerManager
-from polysaccharide.polymers.filters import has_sims
+from polysaccharide.polymer.representation import Polymer
+from polysaccharide.polymer.management import PolymerManager
+from polysaccharide.polymer.filters import has_sims
 
 # Static Paths
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')

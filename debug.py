@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from polysaccharide.polymers.management import PolymerManager
-from polysaccharide.polymers.building import build_linear_polymer, mbmol_from_mono_smarts
+from polysaccharide.polymer.management import PolymerManager
+from polysaccharide.polymer.building import build_linear_polymer, mbmol_from_mono_smarts
 
 p = Path('Collections')
 

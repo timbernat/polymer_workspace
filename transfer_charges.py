@@ -22,9 +22,9 @@ avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 # Polymer Imports
 from polysaccharide.solvation.solvents import WATER_TIP3P
 
-from polysaccharide.polymers.representation import Polymer
-from polysaccharide.polymers.management import PolymerManager
-from polysaccharide.polymers.filters import is_charged, has_monomers_chgd
+from polysaccharide.polymer.representation import Polymer
+from polysaccharide.polymer.management import PolymerManager
+from polysaccharide.polymer.filters import is_charged, has_monomers_chgd
 
 # Static Paths
 COLL_PATH = Path('Collections')

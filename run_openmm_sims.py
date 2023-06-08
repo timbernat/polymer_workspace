@@ -21,9 +21,9 @@ avail_sim_templates = resources.AVAIL_RESOURCES['sim_templates']
 # Polymer Imports
 from polysaccharide.simulation.records import SimulationParameters
 
-from polysaccharide.polymers.representation import Polymer
-from polysaccharide.polymers.management import PolymerManager
-from polysaccharide.polymers.filters import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
+from polysaccharide.polymer.representation import Polymer
+from polysaccharide.polymer.management import PolymerManager
+from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
 
 # Static Paths
 COLL_PATH = Path('Collections')

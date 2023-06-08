@@ -21,13 +21,13 @@ import resources
 avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Polymer Imports
-from polysaccharide.polymers.representation import Polymer
-from polysaccharide.polymers.management import PolymerManager
-from polysaccharide.polymers.filters import is_unsolvated
+from polysaccharide.polymer.representation import Polymer
+from polysaccharide.polymer.management import PolymerManager
+from polysaccharide.polymer.filters import is_unsolvated
 
-from polysaccharide.polymers.abmono import estimate_max_DOP, estimate_chain_len
-from polysaccharide.polymers.building import build_linear_polymer
-from polysaccharide.polymers.exceptions import ExcessiveChainLengthError
+from polysaccharide.polymer.abmono import estimate_max_DOP, estimate_chain_len
+from polysaccharide.polymer.building import build_linear_polymer
+from polysaccharide.polymer.exceptions import ExcessiveChainLengthError
 
 # Static Paths
 COLL_PATH = Path('Collections')
