@@ -21,8 +21,10 @@ import resources
 avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Polymer Imports
-from polysaccharide.representation import Polymer, PolymerManager
-from polysaccharide.representation import is_unsolvated, filter_factory_by_attr
+from polysaccharide.polymers.representation import Polymer
+from polysaccharide.polymers.management import PolymerManager
+from polysaccharide.polymers.filters import is_unsolvated
+
 from polysaccharide.molutils.polymer.building import build_linear_polymer
 from polysaccharide.molutils.polymer.abmono import estimate_max_DOP, estimate_chain_len
 from polysaccharide.molutils.polymer.exceptions import ExcessiveChainLengthError

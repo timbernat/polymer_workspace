@@ -19,9 +19,12 @@ import resources
 avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Polymer Imports
-from polysaccharide.representation import Polymer, PolymerManager
-from polysaccharide.representation import identity, filter_factory_by_attr
+from polysaccharide.polymers.representation import Polymer
+from polysaccharide.polymers.management import PolymerManager
+from polysaccharide.polymers.filters import identity, filter_factory_by_attr
+
 from polysaccharide.charging.application import ChargingParameters
+from polysaccharide.simulation.records import SimulationPaths, SimulationParameters
 
 # Static Paths
 COLL_PATH = Path('Collections')

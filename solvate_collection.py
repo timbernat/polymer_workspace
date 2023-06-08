@@ -20,11 +20,13 @@ import resources
 avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Custom Imports
-from polysaccharide import LOGGERS_MASTER
-from polysaccharide.representation import Polymer, PolymerManager
-from polysaccharide.representation import is_unsolvated, filter_factory_by_attr
+from polysaccharide.polymers.representation import Polymer
+from polysaccharide.polymers.management import PolymerManager
+from polysaccharide.polymers.filters import is_unsolvated, filter_factory_by_attr
+
 from polysaccharide.solvation import solvents as psolvents
 from polysaccharide.solvation.solvent import Solvent
+
 from openmm.unit import nanometer
 
 # Static Paths
