@@ -25,7 +25,7 @@ from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
 from polysaccharide.polymer.filters import is_unsolvated
 
-from polysaccharide.polymer.abmono import estimate_max_DOP, estimate_chain_len
+from polysaccharide.polymer.monomer import estimate_max_DOP, estimate_chain_len
 from polysaccharide.polymer.building import build_linear_polymer
 from polysaccharide.polymer.exceptions import ExcessiveChainLengthError
 

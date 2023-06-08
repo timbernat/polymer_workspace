@@ -25,6 +25,9 @@ from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
 from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
 
+# Utility function imports
+from workflow_functs import simulate_polymer
+
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
@@ -82,6 +85,6 @@ if __name__ == '__main__':
             loggers=loggers,
             proc_name=f'Simulation {sim_params.charge_method}',
             filters=filters
-        )(Polymer.run_simulation)
+        )(simulate_polymer)
 
         simulate(sim_params)

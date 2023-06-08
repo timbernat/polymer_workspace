@@ -79,7 +79,6 @@ if __name__ == '__main__':
             clone_solvent=False, # exclude solvent (will need to resolvate with new structure later anyway)
             clone_structures=False,
             clone_monomers=True, # keep only charged monomer information
-            clone_ff=False,
             clone_charges=False,
             clone_sims= False
         )

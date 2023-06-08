@@ -25,6 +25,9 @@ from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
 from polysaccharide.polymer.filters import is_unsolvated, is_charged, is_base
 
+# Utility function imports
+from workflow_functs import simulate_polymer
+
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
@@ -72,11 +75,10 @@ if __name__ == '__main__':
                 clone_solvent=True,
                 clone_structures=True,
                 clone_monomers=True,
-                clone_ff=True,
                 clone_charges=True,
                 clone_sims=False
             )
-            polymer.run_simulation(sim_params)
+            simulate_polymer(polymer, sim_params)
             
             main_logger.info('Extracting final conformation from simulation')
             traj = polymer.load_traj(polymer.newest_sim_dir)
