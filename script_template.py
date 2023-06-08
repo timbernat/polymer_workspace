@@ -26,10 +26,16 @@ from polysaccharide.polymer.filters import identity, filter_factory_by_attr
 from polysaccharide.charging.application import ChargingParameters
 from polysaccharide.simulation.records import SimulationPaths, SimulationParameters
 
+# Utility function imports
+from workflow_functs import PLACEHOLDER
+
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
+
+SIM_PARAM_PATH = impres.files(resources.sim_templates)
+CHG_PARAM_PATH = impres.files(resources.chg_templates)
+INP_PARAM_PATH = impres.files(resources.inp_templates)
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
@@ -57,8 +63,9 @@ filters = [identity]
 if __name__ == '__main__':
     mgr = PolymerManager(source_path)
 
-    @mgr.logging_wrapper(loggers, proc_name='...', filters=filters)
-    def execute(polymer : Polymer, *args, **kwargs):
-        pass
+    execute = mgr.logging_wrapper(
+        proc_name='...',
+        filters=filters
+    )(PLACEHOLDER)
 
     execute()

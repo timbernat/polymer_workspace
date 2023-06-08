@@ -3,11 +3,6 @@
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
-main_logger = logging.getLogger(__name__)
-
-from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-loggers = [main_logger, *LOGGERS_MASTER]
 
 # Generic imports
 import argparse
@@ -16,7 +11,10 @@ from pathlib import Path
 # Resource files
 import importlib_resources as impres
 import resources
-avail_sim_templates = resources.AVAIL_RESOURCES['sim_templates']
+avail_sim_templates = ', '.join(
+    path.name
+        for path in resources.AVAIL_RESOURCES['sim_templates']
+)
 
 # Polymer Imports
 from polysaccharide.simulation.records import SimulationParameters
@@ -31,7 +29,6 @@ from workflow_functs import simulate_polymer
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
 SIM_PARAM_PATH = impres.files(resources.sim_templates)
 
 # CLI arg parsing
@@ -41,7 +38,7 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for simulation (available files are {", ".join(avail_sim_templates)})', action='store', nargs='+', required=True)
+parser.add_argument('-sp', '--sim_params'  , help=f'Name of the simulation parameters preset file to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
 parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
 parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "solv")', choices=('solv', 'unsolv', 'all'), nargs='?', default='solv')
 
@@ -79,12 +76,10 @@ else:
 if __name__ == '__main__':
     mgr = PolymerManager(src_coll_path)
     for sim_param_path in sim_param_paths:
-        sim_params = SimulationParameters.from_file(sim_param_path)
-
         simulate = mgr.logging_wrapper(
-            loggers=loggers,
-            proc_name=f'Simulation {sim_params.charge_method}',
+            proc_name=f'Simulation {sim_param_path.stem}',
             filters=filters
         )(simulate_polymer)
 
+        sim_params = SimulationParameters.from_file(sim_param_path)
         simulate(sim_params)

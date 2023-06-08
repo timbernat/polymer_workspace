@@ -13,11 +13,6 @@ loggers = [main_logger, *LOGGERS_MASTER]
 import argparse
 from pathlib import Path
 
-# Resource files
-import importlib_resources as impres
-import resources
-avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
-
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager
 from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charged, is_uncharged, filter_factory_by_attr
@@ -25,7 +20,6 @@ from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charge
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
@@ -33,11 +27,11 @@ RESOURCE_PATH = impres.files(resources)
 parser = argparse.ArgumentParser(
     description=__doc__ # use script docstring as help description 
 )
-parser.add_argument('-src', '--source_name' , help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-out', '--output_file' , help='Name of the text file to output polymer names to', required=True)
-parser.add_argument('-n', '--mol_names'     , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
-parser.add_argument('-s', '--solv_type'     , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "all")', choices=('solv', 'unsolv', 'all'), nargs='?', default='all')
-parser.add_argument('-c', '--charge_type'   , help='Set which charging status to filter for (options are "chg", "unchg", or "all", defaults to "all")' , choices=('chg', 'unchg', 'all')  , nargs='?', default='all')
+parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
+parser.add_argument('-out', '--output_file', help='Name of the text file to output polymer names to', required=True)
+parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
+parser.add_argument('-s', '--solv_type'    , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "all")', choices=('solv', 'unsolv', 'all'), nargs='?', default='all')
+parser.add_argument('-c', '--charge_type'  , help='Set which charging status to filter for (options are "chg", "unchg", or "all", defaults to "all")' , choices=('chg', 'unchg', 'all')  , nargs='?', default='all')
 
 args = parser.parse_args()
 

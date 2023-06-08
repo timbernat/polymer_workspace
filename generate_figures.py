@@ -38,7 +38,6 @@ from polysaccharide.polymer.filters import has_sims
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
 COLL_PATH = Path('Collections')
 
-RESOURCE_PATH = impres.files(resources)
 CHG_PARAM_PATH = impres.files(resources.chg_templates)
 SIM_PARAM_PATH = impres.files(resources.sim_templates)
 

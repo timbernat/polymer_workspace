@@ -3,29 +3,20 @@
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
-main_logger = logging.getLogger(__name__)
 
 from polysaccharide import LOGGERS_MASTER
 from polysaccharide.logutils import ProcessLogHandler
-loggers = [main_logger, *LOGGERS_MASTER]
 
 # Generic imports
 import argparse
 from pathlib import Path
 
-# Resource files
-import importlib_resources as impres
-import resources
-avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
-
 # Custom Imports
-from polysaccharide import LOGGERS_MASTER
 from polysaccharide.polymer.management import PolymerManager
 
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
@@ -64,7 +55,7 @@ if __name__ == '__main__':
         mgr.purge_logs(really=True)
 
     # Perform manager file setup / purge actions
-    with ProcessLogHandler(filedir=mgr.log_dir, loggers=loggers, proc_name=f'Setup of {mgr.collection_dir.name}', timestamp=True):
+    with ProcessLogHandler(filedir=mgr.log_dir, loggers=LOGGERS_MASTER, proc_name=f'Setup of {mgr.collection_dir.name}', timestamp=True):
         if args.reset:
             mgr.purge_collection(really=True, purge_logs=False) # Explicitly DON'T purge logs here (will be done prior to entering log loop)
 

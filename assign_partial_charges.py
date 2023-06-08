@@ -3,11 +3,6 @@
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
-main_logger = logging.getLogger(__name__)
-
-from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-loggers = [main_logger, *LOGGERS_MASTER]
 
 # Generic imports
 import argparse
@@ -16,19 +11,23 @@ from pathlib import Path
 # Resource files
 import importlib_resources as impres
 import resources
-avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
+avail_chg_templates = ', '.join(
+    path.name
+        for path in resources.AVAIL_RESOURCES['chg_templates']
+)
 
 # Polymer Imports
 from polysaccharide.charging.application import ChargingParameters
 
-from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
 from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_uncharged, filter_factory_by_attr
+
+# Utility function imports
+from workflow_functs import assign_polymer_charges
 
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
@@ -37,7 +36,7 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-src', '--source_name' , help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-cp', '--charge_params', help=f'Name of the charging parameters preset file to load for charging (available files are {", ".join(avail_chg_templates)})', required=True)
+parser.add_argument('-cp', '--charge_params', help=f'Name of the charging parameters preset file to load for charging (available files are {avail_chg_templates})', required=True)
 parser.add_argument('-n', '--mol_names'     , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
 parser.add_argument('-s', '--solv_type'     , help='Set which solvation type to filter for (options are "solv", "unsolv", or "all", defaults to "unsolv")', choices=('solv', 'unsolv', 'all'), nargs='?', default='unsolv')
 parser.add_argument('-o', '--overwrite'     , help='Whether to permit charge assignment to molecules which have already had charges assigned', action='store_true')
@@ -77,10 +76,9 @@ else:
 
 if __name__ == '__main__':
     mgr = PolymerManager(src_coll_path)
-    generate_charge_files = mgr.logging_wrapper(
-        loggers,
+    assign_charges = mgr.logging_wrapper(
         proc_name=f'Charge assignment',
         filters=filters
-    )(Polymer.obtain_partial_charges) 
+    )(assign_polymer_charges) 
     
-    generate_charge_files(chg_params)
+    assign_charges(chg_params)

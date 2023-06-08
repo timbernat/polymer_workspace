@@ -3,16 +3,11 @@
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
-main_logger = logging.getLogger(__name__)
-
-from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-loggers = [main_logger, *LOGGERS_MASTER]
 
 # Generic imports
 import argparse
 from pathlib import Path
-from typing import Iterable
+from openmm.unit import nanometer
 
 # Resource files
 import importlib_resources as impres
@@ -27,12 +22,12 @@ from polysaccharide.polymer.filters import is_unsolvated, filter_factory_by_attr
 from polysaccharide.solvation import solvents as psolvents
 from polysaccharide.solvation.solvent import Solvent
 
-from openmm.unit import nanometer
+# Utility function imports
+from workflow_functs import solvate
 
 # Static Paths
 COLL_PATH = Path('Collections')
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-RESOURCE_PATH = impres.files(resources)
 SOLV_TEMP_PATH = impres.files(resources.inp_templates)
 
 # CLI arg parsing
@@ -79,9 +74,8 @@ if __name__ == '__main__':
     mgr = PolymerManager(source_path)
 
     solvate_collection = mgr.logging_wrapper(
-        loggers=loggers,
         proc_name='Solvation',
         filters=filters
-    )(Polymer.solvate)
+    )(solvate)
 
     solvate_collection(solvents=desired_solvents, template_path=solv_template, exclusion=exclusion)
