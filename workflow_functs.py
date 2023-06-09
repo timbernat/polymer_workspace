@@ -10,6 +10,7 @@ from polysaccharide import LOGGERS_MASTER
 # Generic imports
 from pathlib import Path
 from shutil import copyfile
+from time import sleep
 
 # Polymer Imports
 from polysaccharide.solvation.solvent import Solvent
@@ -58,6 +59,11 @@ SIM_PARAM_PATH = impres.files(resources.sim_templates)
 def PLACEHOLDER(polymer : Polymer, poly_logger : Logger) -> None:
     '''Placeholder template function - for self-documentation AND for script_template.py'''
     pass
+
+def dummy(polymer : Polymer, poly_logger : Logger, wait_time : int) -> None:
+    '''Dummy function for testing script dispatch'''
+    poly_logger.info(f'Performing fake calculation for {polymer.mol_name} for {wait_time} seconds')
+    sleep(wait_time)
 
 def solvate(polymer : Polymer, poly_logger : Logger, solvents : Union[Solvent, Iterable[Solvent]], template_path : Path, exclusion : float=None) -> None:
     '''Fill a box around a polymer with solvent'''
