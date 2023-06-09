@@ -20,7 +20,7 @@ avail_chg_templates = ', '.join(
 from polysaccharide.charging.application import ChargingParameters
 
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_uncharged, filter_factory_by_attr
+from polysaccharide.polymer.filtering import is_solvated, is_unsolvated, is_uncharged, filter_factory_by_attr
 
 # Utility function imports
 from workflow_functs import assign_polymer_charges

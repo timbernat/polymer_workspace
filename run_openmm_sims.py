@@ -21,7 +21,7 @@ from polysaccharide.simulation.records import SimulationParameters
 
 from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
+from polysaccharide.polymer.filtering import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
 
 # Utility function imports
 from workflow_functs import simulate_polymer

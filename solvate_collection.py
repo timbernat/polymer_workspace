@@ -17,7 +17,7 @@ avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 # Custom Imports
 from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_unsolvated, filter_factory_by_attr
+from polysaccharide.polymer.filtering import is_unsolvated, filter_factory_by_attr
 
 from polysaccharide.solvation import solvents as psolvents
 from polysaccharide.solvation.solvent import Solvent

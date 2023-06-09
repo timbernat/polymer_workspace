@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_unsolvated
+from polysaccharide.polymer.filtering import is_unsolvated
 
 # Utility function imports
 from workflow_functs import generate_reduced_pdb

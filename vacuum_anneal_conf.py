@@ -17,7 +17,7 @@ avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 from polysaccharide.simulation.records import SimulationParameters
 
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_unsolvated, is_charged, is_base
+from polysaccharide.polymer.filtering import is_unsolvated, is_charged, is_base
 
 # Utility function imports
 from workflow_functs import vacuum_anneal

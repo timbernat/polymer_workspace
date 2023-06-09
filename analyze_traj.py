@@ -11,7 +11,7 @@ from openmm.unit import nanosecond
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import has_sims, is_solvated, is_unsolvated, filter_factory_by_attr
+from polysaccharide.polymer.filtering import has_sims, is_solvated, is_unsolvated, filter_factory_by_attr
 
 # Utility function imports
 from workflow_functs import perform_prop_analysis

@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filters import is_charged, has_monomers_chgd
+from polysaccharide.polymer.filtering import is_charged, has_monomers_chgd
 
 # Utility function imports
 from workflow_functs import retrieve_monomers

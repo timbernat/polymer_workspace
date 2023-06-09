@@ -22,7 +22,7 @@ from polysaccharide.simulation.execution import run_simulation
 
 from polysaccharide.polymer.representation import Polymer, SimDirFilter
 from polysaccharide.polymer.management import PolymerManager, PolymerFunction
-from polysaccharide.polymer.filters import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
+from polysaccharide.polymer.filtering import is_solvated, is_unsolvated, is_charged, filter_factory_by_attr
 from polysaccharide.polymer.monomer import estimate_max_DOP, estimate_chain_len
 from polysaccharide.polymer.building import build_linear_polymer
 from polysaccharide.polymer.exceptions import ExcessiveChainLengthError
