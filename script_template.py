@@ -20,8 +20,7 @@ avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Polymer Imports
 from polysaccharide.polymer.representation import Polymer
-from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filtering import identity, filter_factory_by_attr
+from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
 
 from polysaccharide.charging.application import ChargingParameters
 from polysaccharide.simulation.records import SimulationPaths, SimulationParameters
@@ -43,7 +42,8 @@ INP_PARAM_PATH = impres.files(resources.inp_templates)
 parser = argparse.ArgumentParser(
     description=__doc__ # use script docstring as help description 
 )
-parser.add_argument('-src', '--source_name'  , help='The name of the target collection of Polymers', required=True)
+parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
+MolFilterBuffer.argparse_inject(parser)
 
 args = parser.parse_args()
 
@@ -52,10 +52,9 @@ args = parser.parse_args()
 
 ## defining paths
 source_path = COLL_PATH / args.source_name
-...
 
 ## defining mol filters
-filters = [identity]
+molbuf = MolFilterBuffer.from_argparse(args)
 
 # Execution
 # ------------------------------------------------------------------------------
@@ -65,7 +64,7 @@ if __name__ == '__main__':
 
     execute = mgr.logging_wrapper(
         proc_name='...',
-        filters=filters
+        filters=molbuf.filters
     )(PLACEHOLDER)
 
     execute()

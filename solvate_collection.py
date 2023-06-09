@@ -15,10 +15,7 @@ import resources
 avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
 
 # Custom Imports
-from polysaccharide.polymer.representation import Polymer
-from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filtering import is_unsolvated, filter_factory_by_attr
-
+from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
 from polysaccharide.solvation import solvents as psolvents
 from polysaccharide.solvation.solvent import Solvent
 
@@ -37,10 +34,10 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-parser.add_argument('-n', '--mol_names'    , help='If set, will charge ONLY the molecules with the names specified', action='store', nargs='+')
 parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
 parser.add_argument('-t', '--template'     , help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
 parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
+MolFilterBuffer.argparse_inject(parser)
 
 args = parser.parse_args()
 
@@ -62,10 +59,8 @@ desired_solvents = [
 exclusion = args.exclusion * nanometer # assign units
 
 ## defining filters
-filters = [is_unsolvated]
-if args.mol_names is not None:
-    desired_mol = filter_factory_by_attr('base_mol_name', lambda name : name in args.mol_names)
-    filters.append(desired_mol)
+molbuf = MolFilterBuffer.from_argparse(args)
+molbuf.solvent = False # force preference for only unsolvated molecules (don't want to attempt solvation twice)
 
 # Execution
 # ------------------------------------------------------------------------------
@@ -73,9 +68,10 @@ if args.mol_names is not None:
 if __name__ == '__main__':
     mgr = PolymerManager(source_path)
 
+    print(molbuf, molbuf.valid_names(mgr))
     solvate_collection = mgr.logging_wrapper(
         proc_name='Solvation',
-        filters=filters
+        filters=molbuf.filters
     )(solvate)
 
     solvate_collection(solvents=desired_solvents, template_path=solv_template, exclusion=exclusion)

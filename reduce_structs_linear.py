@@ -9,8 +9,7 @@ import argparse
 from pathlib import Path
 
 # Polymer Imports
-from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filtering import is_unsolvated
+from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
 
 # Utility function imports
 from workflow_functs import generate_reduced_pdb
@@ -31,13 +30,15 @@ parser.add_argument('-N', '--max_chain_len'    , help='Maximum number of atoms i
 parser.add_argument('-D', '--DOP'              , help='The number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
 parser.add_argument('-lim', '--chain_len_limit', help='The maximum allowable size for a chain to be built to; any chains attempted to be built larger than this limit will raise an error', type=int, default=300)
 parser.add_argument('-f', '--flip_term_labels' , help='Names of the chains on which to reverse the order of head/tail terminal group labels (only works for linear homopolymers!)', action='store', nargs='+', default=tuple())
+MolFilterBuffer.argparse_inject(parser)
 
 args = parser.parse_args()
-if args.struct_output is None:
-    args.struct_output = f'{args.source_name}_reduced' # can't just set as generic default, since this value depends on the source input
 
 # Arg processing
 # ------------------------------------------------------------------------------
+
+if args.struct_output is None:
+    args.struct_output = f'{args.source_name}_reduced' # can't just set as generic default, since this value depends on the source input
 
 # defining paths
 source_path = COLL_PATH / args.source_name
@@ -51,7 +52,8 @@ reduced_monomers.mkdir(  exist_ok=True)
 reduced_structures.mkdir(exist_ok=True)
 
 # defining filters
-filters = [is_unsolvated]
+molbuf = MolFilterBuffer.from_argparse(args)
+molbuf.solvent = False # force preference for unsolvated molecules - makes logic for monomer selection cleaner (don;t need to worry about wrong number of monomers due to solvent)
 
 # Execution
 # ------------------------------------------------------------------------------
@@ -61,7 +63,7 @@ if __name__ == '__main__':
 
     generate_reduced_structs= src_mgr.logging_wrapper(
         proc_name='Structure reduction', 
-        filters=filters
+        filters=molbuf.filters
     )(generate_reduced_pdb)
 
     generate_reduced_structs(

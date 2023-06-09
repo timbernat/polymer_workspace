@@ -9,8 +9,8 @@ import argparse
 from pathlib import Path
 
 # Polymer Imports
-from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filtering import is_charged, has_monomers_chgd
+from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
+from polysaccharide.polymer.filtering import has_monomers_chgd
 
 # Utility function imports
 from workflow_functs import retrieve_monomers
@@ -27,6 +27,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('-src' , '--source_name', help='The name of the collection of reduced Polymers to draw monomers from', required=True)
 parser.add_argument('-targ', '--target_name', help='The name of the target output collection of Polymers to move charged monomers to', required=True)
+MolFilterBuffer.argparse_inject(parser)
 
 args = parser.parse_args()
 
@@ -38,7 +39,10 @@ source_path = COLL_PATH / args.source_name
 output_path = COLL_PATH / args.output_name
 
 # defining filters
-filters = [is_charged, has_monomers_chgd]
+molbuf = MolFilterBuffer.from_argparse(args)
+molbuf.charges = True # force preference for charges 
+mol_filters = molbuf.filters
+mol_filters.append(has_monomers_chgd) # also assert that, not only do charges exist, but that they've been monomer-averaged
 
 # Execution
 # ------------------------------------------------------------------------------
@@ -51,7 +55,7 @@ if __name__ == '__main__':
 
     transfer_chgd_mono = mgr_large.logging_wrapper(
         proc_name='Charged monomer transfer',
-        filters=filters
+        filters=mol_filters
     )(retrieve_monomers)
 
     transfer_chgd_mono(mgr_small)
