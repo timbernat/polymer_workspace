@@ -28,7 +28,6 @@ avail_sim_templates = ', '.join(
 )
 
 # Polymer Imports
-from polysaccharide.solvation.solvent import Solvent
 from polysaccharide.solvation import solvents as all_solvents
 
 from polysaccharide.charging.application import ChargingParameters, CHARGER_REGISTRY
@@ -38,8 +37,10 @@ from polysaccharide.simulation.records import SimulationParameters
 from polysaccharide.simulation.execution import run_simulation
 
 from polysaccharide.polymer.representation import Polymer
-from polysaccharide.polymer.management import PolymerManager, PolymerFunction
+from polysaccharide.polymer.management import PolymerManager, PolymerFunction, MolFilterBuffer
+from polysaccharide.polymer.filtering import MolFilter, has_sims, has_monomers_chgd, is_base
 from polysaccharide.polymer.filtering import SimDirFilter, has_binary_traj
+
 from polysaccharide.polymer.monomer import estimate_max_DOP, estimate_chain_len
 from polysaccharide.polymer.building import build_linear_polymer
 from polysaccharide.polymer.exceptions import ExcessiveChainLengthError
@@ -49,7 +50,6 @@ from polysaccharide.analysis import trajectory
 # Molecular Dynamics
 from openmm.unit import nanosecond # time
 from openmm.unit import nanometer, angstrom # length
-from openmm.unit import kelvin, atmosphere # misc
 
 
 # Base class
@@ -58,6 +58,12 @@ class WorkflowComponent(ABC):
     @classmethod
     def desc(self) -> str:
         '''Brief description to accompany component'''
+        ...
+    
+    @abstractproperty
+    @classmethod
+    def name(self) -> str:
+        '''Brief name to label component'''
         ...
 
     @abstractmethod
@@ -69,19 +75,55 @@ class WorkflowComponent(ABC):
         '''Flexible support for instantiating addition to argparse in an existing script'''
         ...
 
+    @abstractmethod
+    def make_polymer_fn(self) -> PolymerFunction:
+        ...
+
     @classmethod
     def from_argparse(cls, args : Namespace) -> 'WorkflowComponent':
         '''Initialize from an argparse Namespace'''
         return cls(**vars(args))
 
-    @abstractmethod
-    def make_polymer_fn(self) -> PolymerFunction:
-        ...
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        return molbuf.filters # default to base filters
+
+    @classmethod
+    @property
+    def registry(cls) -> dict[str, 'WorkflowComponent']:
+        '''Name-indexed dict of all inherited Component implementations'''
+        return {
+            subcomp.name : subcomp
+                for subcomp in cls.__subclasses__()
+        }
 
 
 # Concrete child class implementations
+class DummyCalculation(WorkflowComponent):
+    desc = 'Computes RDF and property time series data and saving to csvs for plotting and analysis'
+    name = 'dummy'
+
+    def __init__(self, wait_time : int, **kwargs):
+        '''Initialize wait time to simulate non-trivial task'''
+        self.wait_time = wait_time
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-w', '--wait_time', help='Number of seconds for dummy task to wait', action='store', type=int)
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Dummy function for testing script dispatch'''
+            poly_logger.info(f'Performing fake calculation for {polymer.mol_name} for {self.wait_time} seconds')
+            sleep(self.wait_time)
+
+        return polymer_fn
+
 class ChargeAssignment(WorkflowComponent):
     desc = 'Partial charge assignment'
+    name = 'charge'
 
     def __init__(self, chg_params_name : str, **kwargs):
         '''Load charging parameters from central resource file'''
@@ -94,6 +136,8 @@ class ChargeAssignment(WorkflowComponent):
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         parser.add_argument('-cp', '--chg_params_name', help=f'Name of the charging parameters preset file to load for charging (available files are {avail_chg_templates})', required=True)
+
+    # TOSELF : overwrite / charge status force in assert_filter_prefs?
 
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
@@ -128,7 +172,8 @@ class ChargeAssignment(WorkflowComponent):
         return polymer_fn
     
 class TrajectoryAnalysis(WorkflowComponent):
-    desc = ''
+    desc = 'Computes RDF and property time series data and saving to csvs for plotting and analysis'
+    name = 'analyze'
 
     def __init__(self, sim_time : Optional[int], traj_sample_interval : int=1, **kwargs):
         '''Defining simulation-based filters'''
@@ -144,6 +189,13 @@ class TrajectoryAnalysis(WorkflowComponent):
         '''Flexible support for instantiating addition to argparse in an existing script'''
         parser.add_argument('-t', '--sim_time'              , help='If set, will only analyze trajectories run for this number of nanoseconds', action='store', type=float)
         parser.add_argument('-tsi', '--traj_sample_interval', help='How often to sample trajectory frames when loading (equilvalent to "stride" in mdtraj); useful for huge trajectories', action='store', type=int, default=1)
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        mol_filters = molbuf.filters
+        mol_filters.append(has_sims)
+
+        return mol_filters
 
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
@@ -174,6 +226,7 @@ class TrajectoryAnalysis(WorkflowComponent):
     
 class BuildReducedStructures(WorkflowComponent):
     desc = 'Creates directory of reduced-chain-length structure PDBs and monomer JSONs from a collection of linear Polymers'
+    name = 'redux'
 
     def __init__(self, struct_output : Path, mono_output : Path, DOP : Optional[int]=None, max_chain_len : Optional[int]=None, chain_len_limit : int=300, flip_term_labels : Optional[Iterable]=None):
         '''Initialize sizes of new chains to build, along with locations to output structure files to'''
@@ -202,6 +255,11 @@ class BuildReducedStructures(WorkflowComponent):
         parser.add_argument('-lim', '--chain_len_limit', help='The maximum allowable size for a chain to be built to; any chains attempted to be built larger than this limit will raise an error', type=int, default=300)
         parser.add_argument('-f', '--flip_term_labels' , help='Names of the chains on which to reverse the order of head/tail terminal group labels (only works for linear homopolymers!)', action='store', nargs='+', default=tuple())
 
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.solvent = False # force preference for unsolvated molecules - makes logic for monomer selection cleaner (don;t need to worry about wrong number of monomers due to solvent)
+        return molbuf.filters 
+
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
         def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
@@ -225,21 +283,26 @@ class BuildReducedStructures(WorkflowComponent):
     
 class RunSimulations(WorkflowComponent):
     desc = 'Prepares and integrates MD simulation for chosen molecules in OpenMM'
+    name = 'simulate'
 
     def __init__(self, sim_param_names : Iterable[str], **kwargs):
         self.all_sim_params= []
         for sim_param_name in sim_param_names:
-            sim_param_path = impres.files(resources.chg_templates)/ sim_param_name
+            sim_param_path = impres.files(resources.sim_templates)/ sim_param_name
             if not sim_param_path.suffix:
                 sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
 
-            sim_params = SimulationParameters.from_file(sim_param_path)
-            self.all_sim_params.append()
+            self.all_sim_params.append( SimulationParameters.from_file(sim_param_path) )
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
         parser.add_argument('-sp', '--sim_param_names', help=f'Name of the simulation parameters preset file(s) to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.charges = True # force preference for charged molecules (can't run simulations otherwise)
+        return molbuf.filters
 
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
@@ -261,6 +324,7 @@ class RunSimulations(WorkflowComponent):
     
 class Solvate(WorkflowComponent):
     desc = 'Solvate molecules in sets of 1 or more desired solvents'
+    name = 'solvate'
 
     def __init__(self, solvents : Iterable[str], template_name : Path, exclusion : float=None, **kwargs):
         if not solvents:
@@ -279,6 +343,11 @@ class Solvate(WorkflowComponent):
         parser.add_argument('-t', '--template_name', help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
         parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
 
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.solvent = False # force preference for only unsolvated molecules (don't want to attempt solvation twice)
+        return molbuf.filters
+
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
         def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
@@ -287,33 +356,48 @@ class Solvate(WorkflowComponent):
  
         return polymer_fn
     
-class DummyCalculation(WorkflowComponent):
-    desc = 'Computes RDF and property time series data and saving to csvs for plotting and analysis'
+class TransferMonomerCharges(WorkflowComponent):
+    desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
+    name = 'transfer'
 
-    def __init__(self, wait_time : int, **kwargs):
-        '''Initialize wait time to simulate non-trivial task'''
-        self.wait_time = wait_time
+    def __init__(self, target_path : str, **kwargs):
+        self.charger_mgr = PolymerManager(target_path)
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-w', '--wait_time', help='Number of seconds for dummy task to wait', action='store', type=int)
+        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', type=Path, required=True)
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.charges = True # force preference for charges 
+        mol_filters = molbuf.filters
+        mol_filters.append(has_monomers_chgd) # also assert that, not only do charges exist, but that they've been monomer-averaged
+
+        return mol_filters
 
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
         def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Dummy function for testing script dispatch'''
-            poly_logger.info(f'Performing fake calculation for {polymer.mol_name} for {self.wait_time} seconds')
-            sleep(self.wait_time)
+            '''Copies charged monomer files from a corresponding Polymer in another collection'''
+            counterpart = self.charged_mgr.polymers[polymer.mol_name]
+            assert(polymer.solvent == counterpart.solvent)
 
+            if not polymer.has_monomer_info_uncharged:
+                counterpart.transfer_file_attr('monomer_file_uncharged', polymer)
+            
+            if not polymer.has_monomer_info_charged:
+                counterpart.transfer_file_attr('monomer_file_charged', polymer)
+        
         return polymer_fn
-
+    
 class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim (already implemented), and structure transfer components
     desc = 'Generate arbitrary number varied starting structures via short, high-T MD simulations'
+    name = 'anneal'
 
     def __init__(self, sim_params_name : str, num_new_confs : int, snapshot_idx : int=-1, **kwargs):
         '''Define parameters for vacuum anneal, along with number of new conformers'''
-        sim_param_path = impres.files(resources.chg_templates) / sim_params_name
+        sim_param_path = impres.files(resources.sim_templates) / sim_params_name
         if not sim_param_path.suffix:
             sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
         self.sim_param_path = sim_param_path
@@ -326,6 +410,15 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
         '''Flexible support for instantiating addition to argparse in an existing script'''
         parser.add_argument('-sim', '--sim_params'  , help='Name of the simulation parameters preset file to load for simulation', default='vacuum_anneal.json')
         parser.add_argument('-r', '--num_replicates', help='Number of total conformers to generate (not counting the original)', type=int, default=4)
+    
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.solvent = False # force preference for unsolvated molecules (VACUUM anneal)
+        molbuf.charges = True  # force preference for charged molecules (can;t run sim otherwise)
+        mol_filters = molbuf.filters
+        mol_filters.append(is_base) # also assert that only base molecules are annealed
+        
+        return mol_filters # default to base filters
 
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
@@ -356,28 +449,3 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 
         return polymer_fn
     
-class TransferMonomerCharges(WorkflowComponent):
-    desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
-
-    def __init__(self, target_path : str, **kwargs):
-        self.charger_mgr = PolymerManager(target_path)
-
-    @staticmethod
-    def argparse_inject(parser : ArgumentParser) -> None:
-        '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', type=Path, required=True)
-
-    def make_polymer_fn(self) -> PolymerFunction:
-        '''Create wrapper for handling in logger'''
-        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Copies charged monomer files from a corresponding Polymer in another collection'''
-            counterpart = self.charged_mgr.polymers[polymer.mol_name]
-            assert(polymer.solvent == counterpart.solvent)
-
-            if not polymer.has_monomer_info_uncharged:
-                counterpart.transfer_file_attr('monomer_file_uncharged', polymer)
-            
-            if not polymer.has_monomer_info_charged:
-                counterpart.transfer_file_attr('monomer_file_charged', polymer)
-        
-        return polymer_fn
