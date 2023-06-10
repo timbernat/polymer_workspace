@@ -1,70 +1,42 @@
-'''Generic template for defining CLI-executable polymer action scripts'''
-
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, force=True)
-main_logger = logging.getLogger(__name__)
-
-from polysaccharide import LOGGERS_MASTER
-from polysaccharide.logutils import ProcessLogHandler
-loggers = [main_logger, *LOGGERS_MASTER]
 
 # Generic imports
 import argparse
 from pathlib import Path
 
-# Resource files
-import importlib_resources as impres
-import resources
-avail_chg_templates = resources.AVAIL_RESOURCES['chg_templates']
-
 # Polymer Imports
-from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
-
-from polysaccharide.charging.application import ChargingParameters
-from polysaccharide.simulation.records import SimulationPaths, SimulationParameters
-
-# Utility function imports
-from workflow_functs import PLACEHOLDER
-
-# Static Paths
-COLL_PATH = Path('Collections')
-COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-
-SIM_PARAM_PATH = impres.files(resources.sim_templates)
-CHG_PARAM_PATH = impres.files(resources.chg_templates)
-INP_PARAM_PATH = impres.files(resources.inp_templates)
+import polymer_workflow
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
 
-parser = argparse.ArgumentParser(
-    description=__doc__ # use script docstring as help description 
-)
-parser.add_argument('-src', '--source_name', help='The name of the target collection of Polymers', required=True)
-MolFilterBuffer.argparse_inject(parser)
+COMP_NAME = 'ChargeAssignment'
+Component = getattr(polymer_workflow, COMP_NAME)
 
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description=Component.desc)
+parser.add_argument('-src', '--source_path' , help='The Path to the target collection of Polymers', required=True, type=Path)
+Component.argparse_inject(parser)
+MolFilterBuffer.argparse_inject(parser)
 
 # Arg processing
 # ------------------------------------------------------------------------------
 
-## defining paths
-source_path = COLL_PATH / args.source_name
+args = parser.parse_args()
 
-## defining mol filters
+src_mgr = PolymerManager(args.source_path)
+comp = Component.from_argparse(args)
 molbuf = MolFilterBuffer.from_argparse(args)
 
 # Execution
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    mgr = PolymerManager(source_path)
-
-    execute = mgr.logging_wrapper(
-        proc_name='...',
+    task_fn = src_mgr.logging_wrapper(
+        proc_name=Component.__name__,
         filters=molbuf.filters
-    )(PLACEHOLDER)
-
-    execute()
+    )(comp.make_polymer_fn()) 
+    
+    task_fn()
