@@ -59,6 +59,7 @@ from openmm.unit import nanometer, angstrom # length
 
 # Base class
 class WorkflowComponent(ABC):
+    '''Base class for assembling serial and parallel set of actions over Polymers'''
     @abstractproperty
     @classmethod
     def desc(self) -> str:
@@ -130,6 +131,27 @@ class DummyCalculation(WorkflowComponent):
             poly_logger.info(f'Performing fake calculation for {polymer.mol_name} for {self.wait_time} seconds')
             sleep(self.wait_time)
 
+        return polymer_fn
+
+class CollectionPopulation(WorkflowComponent):
+    desc = 'Initialize a collection of Polymers from matching sets of PDB structures and accompanying monomer information'
+    name = 'populate'
+
+    def __init__(self, pdb_struct_dir : Path, monomer_dir : Optional[Path], **kwargs):
+        self.pdb_struct_dir = pdb_struct_dir
+        self.monomer_dir = monomer_dir # if (monomer_dir is not None) else pdb_struct_dir
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        parser.add_argument('-pdb', '--pdb_struct_dir', help='The path of the directory in containing the target pdb structure files', type=Path, required=True)
+        parser.add_argument('-mono', '--monomer_dir', help='The path of the directory in containing the accompanying monomer info JSON files', type=Path)
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Source structure and monomer files from directories'''
+            polymer.populate_mol_files(self.pdb_struct_dir, monomer_dir=self.monomer_dir)
+        
         return polymer_fn
 
 class ChargeAssignment(WorkflowComponent):
