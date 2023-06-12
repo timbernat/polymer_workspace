@@ -153,7 +153,115 @@ class CollectionPopulation(WorkflowComponent):
             polymer.populate_mol_files(self.pdb_struct_dir, monomer_dir=self.monomer_dir)
         
         return polymer_fn
+    
+class Solvate(WorkflowComponent):
+    desc = 'Solvate molecules in sets of 1 or more desired solvents'
+    name = 'solvate'
 
+    def __init__(self, solvents : Iterable[Solvent], template_path : Path, exclusion : float=None, **kwargs):
+        if not solvents:
+            raise ValueError('Must specify at least 1 solvent')
+
+        if not hasunits(exclusion):
+            exclusion *= nanometer  # assign units
+
+        self.solvents = solvents
+        self.template_path = template_path
+        self.exclusion = exclusion
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-s', '--solvents'         , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
+        parser.add_argument('-pt', '--packmol_template', help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
+        parser.add_argument('-dir', '--directory'      , help='Path of the folder in which the chosen packmol solvation input file resides', type=Path, default=impres.files(resources.inp_templates))
+        parser.add_argument('-e', '--exclusion'        , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        '''Ensure solvents are initialized as Solvent objects'''
+        return {
+            'solvents' : [
+                getattr(all_solvents, solvent_name)
+                    for solvent_name in args.solvents
+            ],
+            'template_path' : default_suffix(args.directory / args.packmol_template, suffix='inp'),
+            'exclusion' : args.exclusion
+        }
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.solvent = False # force preference for only unsolvated molecules (don't want to attempt solvation twice)
+        return molbuf.filters
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Fill a box around a polymer with solvent'''
+            polymer.solvate(self.solvents, template_path=self.template_path, exclusion=self.exclusion)
+ 
+        return polymer_fn
+    
+class BuildReducedStructures(WorkflowComponent):
+    desc = 'Creates directory of reduced-chain-length structure PDBs and monomer JSONs from a collection of linear Polymers'
+    name = 'redux'
+
+    def __init__(self, struct_output : Path, mono_output : Path, DOP : Optional[int]=None, max_chain_len : Optional[int]=None, chain_len_limit : int=300, flip_term_labels : Optional[Iterable]=None, **kwargs):
+        '''Initialize sizes of new chains to build, along with locations to output structure files to'''
+        self.struct_output = struct_output  
+        self.mono_output = mono_output 
+        self.struct_output.mkdir(exist_ok=True, parents=True)
+        self.mono_output.mkdir(  exist_ok=True, parents=True)
+
+        if not (max_chain_len or DOP):
+            raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided neither)')
+
+        if max_chain_len and DOP:
+            raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided both)')
+        
+        self.max_chain_len = max_chain_len  
+        self.DOP = DOP  
+        self.chain_len_limit = chain_len_limit  
+        self.flip_term_labels = flip_term_labels  
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-pdb', '--struct_output'  , help='The name of the directory to output generated PDB structure to', type=Path)
+        parser.add_argument('-mono' , '--mono_output'  , help='The name of the directory to output generated JSON monomer files to', type=Path)
+        parser.add_argument('-N', '--max_chain_len'    , help='Maximum number of atoms in any of the reduced chain generated. If this is specified, CANNOT specify DOP', type=int)
+        parser.add_argument('-D', '--DOP'              , help='The number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
+        parser.add_argument('-lim', '--chain_len_limit', help='The maximum allowable size for a chain to be built to; any chains attempted to be built larger than this limit will raise an error', type=int, default=300)
+        parser.add_argument('-f', '--flip_term_labels' , help='Names of the chains on which to reverse the order of head/tail terminal group labels (only works for linear homopolymers!)', action='store', nargs='+', default=tuple())
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.solvent = False # force preference for unsolvated molecules - makes logic for monomer selection cleaner (don;t need to worry about wrong number of monomers due to solvent)
+        return molbuf.filters 
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Builds new PDB structures of the desired size from the monomers of an existing Polymer'''
+            monomer_smarts = polymer.monomer_info.monomers # create copy to avoid popping from original
+
+            if self.DOP: # NOTE : this only works as intended because of the exclusivity check during arg processing
+                max_chain_len = estimate_chain_len(monomer_smarts, DOP)
+                DOP = self.DOP
+
+            if self.max_chain_len:
+                max_chain_len = self.max_chain_len
+                DOP = estimate_max_DOP(monomer_smarts, max_chain_len)
+            
+            if max_chain_len > self.chain_len_limit:
+                raise ExcessiveChainLengthError(f'Cannot create reduction with over {self.chain_len_limit} atoms (requested {max_chain_len})')
+            
+            chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=(polymer.mol_name in self.flip_term_labels))
+            chain.save(str(self.struct_output/f'{polymer.mol_name}.pdb'), overwrite=True)
+            copyfile(polymer.monomer_file_uncharged, self.mono_output/f'{polymer.mol_name}.json')
+
+        return polymer_fn
+    
 class ChargeAssignment(WorkflowComponent):
     desc = 'Partial charge assignment'
     name = 'charge'
@@ -205,6 +313,95 @@ class ChargeAssignment(WorkflowComponent):
             avg_chgr = AveragingCharger() # generate precomputed charge set for full molecule from residue library charges
             avg_chgr.set_residue_charges(residue_charges)
             polymer.assert_charges_for(avg_chgr, return_cmol=False)
+        
+        return polymer_fn
+
+class RunSimulations(WorkflowComponent):
+    desc = 'Prepares and integrates MD simulation for chosen molecules in OpenMM'
+    name = 'simulate'
+
+    def __init__(self, sim_params : Union[SimulationParameters, Iterable[SimulationParameters]], **kwargs):
+        '''Initialize 1 or more sets of simulation parameters'''
+        if not sim_params:
+            raise ValueError('Must specify at least 1 simulation parameter preset')
+        
+        self.sim_params = asiterable(sim_params) # handle singleton case
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-sp', '--sim_param_names', help=f'Name of the simulation parameters preset file(s) to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
+        parser.add_argument('-dir', '--directory', help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        '''Load SimulationParameter sets from the list of names and directory specified'''
+        return {
+            'sim_params' : [
+                SimulationParameters.from_file(default_suffix(args.directory / sim_param_name, suffix='json')) 
+                    for sim_param_name in args.sim_param_names
+            ]
+        }
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.charges = True # force preference for charged molecules (can't run simulations otherwise)
+        return molbuf.filters
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Run OpenMM simulation(s) according to sets of predefined simulation parameters'''
+            N = len(self.sim_params)
+            for i, sim_params in enumerate(self.sim_params):
+                poly_logger.info(f'Running simulation {i + 1} / {N}')
+                interchange = polymer.interchange(
+                    forcefield_path=sim_params.forcefield_path,
+                    charge_method=sim_params.charge_method,
+                    periodic=sim_params.periodic
+                )
+
+                sim_folder = polymer.make_sim_dir()
+                run_simulation(interchange, sim_params=sim_params, output_folder=sim_folder, output_name=polymer.mol_name)
+
+        return polymer_fn
+
+class TransferMonomerCharges(WorkflowComponent):
+    desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
+    name = 'transfer'
+
+    def __init__(self, charged_mgr : PolymerManager, **kwargs):
+        self.charged_mgr = charged_mgr
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', required=True)
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        return {'charged_mgr' : PolymerManager(args.target_path)}
+
+    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
+        '''Assert any additional preferences for filters beyond the default molecule filters'''
+        molbuf.charges = True # force preference for charges 
+        mol_filters = molbuf.filters
+        mol_filters.append(has_monomers_chgd) # also assert that, not only do charges exist, but that they've been monomer-averaged
+
+        return mol_filters
+
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Copies charged monomer files from a corresponding Polymer in another collection'''
+            counterpart = self.charged_mgr.polymers[polymer.mol_name]
+            assert(polymer.solvent == counterpart.solvent)
+
+            if not polymer.has_monomer_info_uncharged:
+                counterpart.transfer_file_attr('monomer_file_uncharged', polymer)
+            
+            if not polymer.has_monomer_info_charged:
+                counterpart.transfer_file_attr('monomer_file_charged', polymer)
         
         return polymer_fn
     
@@ -259,199 +456,6 @@ class TrajectoryAnalysis(WorkflowComponent):
                 sim_paths.to_file(polymer.simulation_paths[sim_dir]) # update references to analyzed data files in path file
                 poly_logger.info(f'Successfully exported trajectory analysis data')
             
-        return polymer_fn
-    
-class BuildReducedStructures(WorkflowComponent):
-    desc = 'Creates directory of reduced-chain-length structure PDBs and monomer JSONs from a collection of linear Polymers'
-    name = 'redux'
-
-    def __init__(self, struct_output : Path, mono_output : Path, DOP : Optional[int]=None, max_chain_len : Optional[int]=None, chain_len_limit : int=300, flip_term_labels : Optional[Iterable]=None):
-        '''Initialize sizes of new chains to build, along with locations to output structure files to'''
-        self.struct_output = struct_output  
-        self.mono_output = mono_output 
-
-        if not (max_chain_len or DOP):
-            raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided neither)')
-
-        if max_chain_len and DOP:
-            raise ValueError('Must provide EITHER a maximum chain length OR a degree of polymerization (provided both)')
-        
-        self.max_chain_len = max_chain_len  
-        self.DOP = DOP  
-        self.chain_len_limit = chain_len_limit  
-        self.flip_term_labels = flip_term_labels  
-
-    @staticmethod
-    def argparse_inject(parser : ArgumentParser) -> None:
-        '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-pdb', '--struct_output'  , help='The name of the directory to output generated PDB structure to', type=Path)
-        parser.add_argument('-mono' , '--mono_output'  , help='The name of the directory to output generated JSON monomer files to', type=Path)
-        parser.add_argument('-N', '--max_chain_len'    , help='Maximum number of atoms in any of the reduced chain generated. If this is specified, CANNOT specify DOP', type=int)
-        parser.add_argument('-D', '--DOP'              , help='The number of monomer units to include in the generated reductions.  If this is specified, CANNOT specify max_chain_len', type=int)
-        parser.add_argument('-lim', '--chain_len_limit', help='The maximum allowable size for a chain to be built to; any chains attempted to be built larger than this limit will raise an error', type=int, default=300)
-        parser.add_argument('-f', '--flip_term_labels' , help='Names of the chains on which to reverse the order of head/tail terminal group labels (only works for linear homopolymers!)', action='store', nargs='+', default=tuple())
-
-    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
-        '''Assert any additional preferences for filters beyond the default molecule filters'''
-        molbuf.solvent = False # force preference for unsolvated molecules - makes logic for monomer selection cleaner (don;t need to worry about wrong number of monomers due to solvent)
-        return molbuf.filters 
-
-    def make_polymer_fn(self) -> PolymerFunction:
-        '''Create wrapper for handling in logger'''
-        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Builds new PDB structures of the desired size from the monomers of an existing Polymer'''
-            monomer_smarts = polymer.monomer_info.monomers # create copy to avoid popping from original
-
-            if DOP: # NOTE : this only works as intended because of the exclusivity check during arg processing
-                max_chain_len = estimate_chain_len(monomer_smarts, DOP)
-
-            if max_chain_len:
-                DOP = estimate_max_DOP(monomer_smarts, max_chain_len)
-            
-            if self.max_chain_len > self.chain_len_limit:
-                raise ExcessiveChainLengthError(f'Cannot create reduction with over {self.chain_len_limit} atoms (requested {max_chain_len})')
-            
-            chain = build_linear_polymer(monomer_smarts, DOP=DOP, reverse_term_labels=(polymer.mol_name in self.flip_term_labels))
-            chain.save(str(self.struct_output/f'{polymer.mol_name}.pdb'), overwrite=True)
-            copyfile(polymer.monomer_file_uncharged, self.mono_output/f'{polymer.mol_name}.json')
-
-        return polymer_fn
-    
-class RunSimulations(WorkflowComponent):
-    desc = 'Prepares and integrates MD simulation for chosen molecules in OpenMM'
-    name = 'simulate'
-
-    def __init__(self, sim_params : Union[SimulationParameters, Iterable[SimulationParameters]], **kwargs):
-        '''Initialize 1 or more sets of simulation parameters'''
-        if not sim_params:
-            raise ValueError('Must specify at least 1 simulation parameter preset')
-        
-        self.sim_params = asiterable(sim_params) # handle singleton case
-
-    @staticmethod
-    def argparse_inject(parser : ArgumentParser) -> None:
-        '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-sp', '--sim_param_names', help=f'Name of the simulation parameters preset file(s) to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
-        parser.add_argument('-dir', '--directory', help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
-
-    @classmethod
-    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
-        '''Load SimulationParameter sets from the list of names and directory specified'''
-        return {
-            'sim_params' : [
-                SimulationParameters.from_file(default_suffix(args.directory / sim_param_name, suffix='json')) 
-                    for sim_param_name in args.sim_param_names
-            ]
-        }
-
-    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
-        '''Assert any additional preferences for filters beyond the default molecule filters'''
-        molbuf.charges = True # force preference for charged molecules (can't run simulations otherwise)
-        return molbuf.filters
-
-    def make_polymer_fn(self) -> PolymerFunction:
-        '''Create wrapper for handling in logger'''
-        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Run OpenMM simulation(s) according to sets of predefined simulation parameters'''
-            N = len(self.sim_params)
-            for i, sim_params in enumerate(self.sim_params):
-                poly_logger.info(f'Running simulation {i + 1} / {N}')
-                interchange = polymer.interchange(
-                    forcefield_path=sim_params.forcefield_path,
-                    charge_method=sim_params.charge_method,
-                    periodic=sim_params.periodic
-                )
-
-                sim_folder = polymer.make_sim_dir()
-                run_simulation(interchange, sim_params=sim_params, output_folder=sim_folder, output_name=polymer.mol_name)
-
-        return polymer_fn
-    
-class Solvate(WorkflowComponent):
-    desc = 'Solvate molecules in sets of 1 or more desired solvents'
-    name = 'solvate'
-
-    def __init__(self, solvents : Iterable[Solvent], template_path : Path, exclusion : float=None, **kwargs):
-        if not solvents:
-            raise ValueError('Must specify at least 1 solvent')
-
-        if not hasunits(exclusion):
-            exclusion *= nanometer  # assign units
-
-        self.solvents = solvents
-        self.template_path = template_path
-        self.exclusion = exclusion
-
-    @staticmethod
-    def argparse_inject(parser : ArgumentParser) -> None:
-        '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-s', '--solvents'         , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
-        parser.add_argument('-pt', '--packmol_template', help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
-        parser.add_argument('-dir', '--directory'      , help='Path of the folder in which the chosen packmol solvation input file resides', type=Path, default=impres.files(resources.inp_templates))
-        parser.add_argument('-e', '--exclusion'        , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
-
-    @classmethod
-    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
-        '''Ensure solvents are initialized as Solvent objects'''
-        return {
-            'solvents' : [
-                getattr(all_solvents, solvent_name)
-                    for solvent_name in args.solvents
-            ],
-            'template_path' : default_suffix(args.directory / args.packmol_template, suffix='inp'),
-            'exclusion' : args.exclusion
-        }
-
-    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
-        '''Assert any additional preferences for filters beyond the default molecule filters'''
-        molbuf.solvent = False # force preference for only unsolvated molecules (don't want to attempt solvation twice)
-        return molbuf.filters
-
-    def make_polymer_fn(self) -> PolymerFunction:
-        '''Create wrapper for handling in logger'''
-        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Fill a box around a polymer with solvent'''
-            polymer.solvate(self.solvents, template_path=self.template_path, exclusion=self.exclusion)
- 
-        return polymer_fn
-    
-class TransferMonomerCharges(WorkflowComponent):
-    desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
-    name = 'transfer'
-
-    def __init__(self, charged_mgr : PolymerManager, **kwargs):
-        self.charged_mgr = charged_mgr
-
-    @staticmethod
-    def argparse_inject(parser : ArgumentParser) -> None:
-        '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', required=True)
-
-    @classmethod
-    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
-        return {'charged_mgr' : PolymerManager(args.target_path)}
-
-    def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
-        '''Assert any additional preferences for filters beyond the default molecule filters'''
-        molbuf.charges = True # force preference for charges 
-        mol_filters = molbuf.filters
-        mol_filters.append(has_monomers_chgd) # also assert that, not only do charges exist, but that they've been monomer-averaged
-
-        return mol_filters
-
-    def make_polymer_fn(self) -> PolymerFunction:
-        '''Create wrapper for handling in logger'''
-        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Copies charged monomer files from a corresponding Polymer in another collection'''
-            counterpart = self.charged_mgr.polymers[polymer.mol_name]
-            assert(polymer.solvent == counterpart.solvent)
-
-            if not polymer.has_monomer_info_uncharged:
-                counterpart.transfer_file_attr('monomer_file_uncharged', polymer)
-            
-            if not polymer.has_monomer_info_charged:
-                counterpart.transfer_file_attr('monomer_file_charged', polymer)
-        
         return polymer_fn
     
 class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim (already implemented), and structure transfer components
@@ -517,4 +521,4 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 new_conf.save(conf_clone.structure_file) # overwrite the clone's structure with the new conformer
                 
         return polymer_fn
-    
+
