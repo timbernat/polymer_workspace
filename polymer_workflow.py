@@ -28,6 +28,11 @@ avail_sim_templates = ', '.join(
 )
 
 # Polymer Imports
+from polysaccharide.general import hasunits
+from polysaccharide.extratypes import asiterable
+from polysaccharide.filetree import default_suffix
+
+from polysaccharide.solvation.solvent import Solvent
 from polysaccharide.solvation import solvents as all_solvents
 
 from polysaccharide.charging.application import ChargingParameters, CHARGER_REGISTRY
@@ -80,9 +85,15 @@ class WorkflowComponent(ABC):
         ...
 
     @classmethod
+    def process_argparse_args(self, args : Namespace) -> dict[Any, Any]:
+        '''For postprocessing argparse str keywords into objects prior to attempting initialization
+        If not overridden in concrete child classes, will attempt argparse initialize with unmodified CLI inputs'''
+        return vars(args) # return args dict verbatim by default
+
+    @classmethod
     def from_argparse(cls, args : Namespace) -> 'WorkflowComponent':
         '''Initialize from an argparse Namespace'''
-        return cls(**vars(args))
+        return cls(**cls.process_argparse_args(args))
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
@@ -125,17 +136,21 @@ class ChargeAssignment(WorkflowComponent):
     desc = 'Partial charge assignment'
     name = 'charge'
 
-    def __init__(self, chg_params_name : str, **kwargs):
+    def __init__(self, chg_params : ChargingParameters, **kwargs):
         '''Load charging parameters from central resource file'''
-        chg_params_path = impres.files(resources.chg_templates) / chg_params_name
-        if not chg_params_path.suffix:
-            chg_params_path = chg_params_path.with_name(f'{chg_params_path.stem}.json') # ensure charge params path has correct extension
-
-        self.chg_params = ChargingParameters.from_file(chg_params_path)
+        self.chg_params = chg_params
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         parser.add_argument('-cp', '--chg_params_name', help=f'Name of the charging parameters preset file to load for charging (available files are {avail_chg_templates})', required=True)
+        parser.add_argument('-dir', '--directory', help='Path of the folder in which the chosen charging parameters preset file resides', type=Path, default=impres.files(resources.chg_templates))
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        '''Load ChargingParameters from files specified in CLI args'''
+        return {
+            'chg_params' :  ChargingParameters.from_file( default_suffix(args.directory / args.chg_params_name, suffix='json') )
+        }
 
     # TOSELF : overwrite / charge status force in assert_filter_prefs?
 
@@ -242,7 +257,6 @@ class BuildReducedStructures(WorkflowComponent):
         self.max_chain_len = max_chain_len  
         self.DOP = DOP  
         self.chain_len_limit = chain_len_limit  
-
         self.flip_term_labels = flip_term_labels  
 
     @staticmethod
@@ -285,19 +299,28 @@ class RunSimulations(WorkflowComponent):
     desc = 'Prepares and integrates MD simulation for chosen molecules in OpenMM'
     name = 'simulate'
 
-    def __init__(self, sim_param_names : Iterable[str], **kwargs):
-        self.all_sim_params= []
-        for sim_param_name in sim_param_names:
-            sim_param_path = impres.files(resources.sim_templates)/ sim_param_name
-            if not sim_param_path.suffix:
-                sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
-
-            self.all_sim_params.append( SimulationParameters.from_file(sim_param_path) )
+    def __init__(self, sim_params : Union[SimulationParameters, Iterable[SimulationParameters]], **kwargs):
+        '''Initialize 1 or more sets of simulation parameters'''
+        if not sim_params:
+            raise ValueError('Must specify at least 1 simulation parameter preset')
+        
+        self.sim_params = asiterable(sim_params) # handle singleton case
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
         parser.add_argument('-sp', '--sim_param_names', help=f'Name of the simulation parameters preset file(s) to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
+        parser.add_argument('-dir', '--directory', help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        '''Load SimulationParameter sets from the list of names and directory specified'''
+        return {
+            'sim_params' : [
+                SimulationParameters.from_file(default_suffix(args.directory / sim_param_name, suffix='json')) 
+                    for sim_param_name in args.sim_param_names
+            ]
+        }
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
@@ -308,8 +331,8 @@ class RunSimulations(WorkflowComponent):
         '''Create wrapper for handling in logger'''
         def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
             '''Run OpenMM simulation(s) according to sets of predefined simulation parameters'''
-            N = len(self.all_sim_params)
-            for i, sim_params in enumerate(self.all_sim_params):
+            N = len(self.sim_params)
+            for i, sim_params in enumerate(self.sim_params):
                 poly_logger.info(f'Running simulation {i + 1} / {N}')
                 interchange = polymer.interchange(
                     forcefield_path=sim_params.forcefield_path,
@@ -326,22 +349,36 @@ class Solvate(WorkflowComponent):
     desc = 'Solvate molecules in sets of 1 or more desired solvents'
     name = 'solvate'
 
-    def __init__(self, solvents : Iterable[str], template_name : Path, exclusion : float=None, **kwargs):
+    def __init__(self, solvents : Iterable[Solvent], template_path : Path, exclusion : float=None, **kwargs):
         if not solvents:
             raise ValueError('Must specify at least 1 solvent')
-        self.solvents = [
-            getattr(all_solvents, solvent_name)
-                for solvent_name in solvents
-        ]
-        self.template_path = impres.files(resources.inp_templates) / template_name
-        self.exclusion = exclusion * nanometer # assign units
+
+        if not hasunits(exclusion):
+            exclusion *= nanometer  # assign units
+
+        self.solvents = solvents
+        self.template_path = template_path
+        self.exclusion = exclusion
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-s', '--solvents'     , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
-        parser.add_argument('-t', '--template_name', help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
-        parser.add_argument('-e', '--exclusion'    , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
+        parser.add_argument('-s', '--solvents'         , help='Names of all solvent molecule to solvate the target systems in' , action='store', nargs='+', default=['WATER_TIP3P'])
+        parser.add_argument('-pt', '--packmol_template', help='Name of the packmol input template file to use for solvation', action='store', default='solv_polymer_template_box.inp')
+        parser.add_argument('-dir', '--directory'      , help='Path of the folder in which the chosen packmol solvation input file resides', type=Path, default=impres.files(resources.inp_templates))
+        parser.add_argument('-e', '--exclusion'        , help='Distance (in nm) between the bounding box of the molecule and the simiulation / solvation box', action='store', type=float, default=1.0)
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        '''Ensure solvents are initialized as Solvent objects'''
+        return {
+            'solvents' : [
+                getattr(all_solvents, solvent_name)
+                    for solvent_name in args.solvents
+            ],
+            'template_path' : default_suffix(args.directory / args.packmol_template, suffix='inp'),
+            'exclusion' : args.exclusion
+        }
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
@@ -360,13 +397,17 @@ class TransferMonomerCharges(WorkflowComponent):
     desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
     name = 'transfer'
 
-    def __init__(self, target_path : str, **kwargs):
-        self.charger_mgr = PolymerManager(target_path)
+    def __init__(self, charged_mgr : PolymerManager, **kwargs):
+        self.charged_mgr = charged_mgr
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', type=Path, required=True)
+        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', required=True)
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        return {'charged_mgr' : PolymerManager(args.target_path)}
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
@@ -395,22 +436,28 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
     desc = 'Generate arbitrary number varied starting structures via short, high-T MD simulations'
     name = 'anneal'
 
-    def __init__(self, sim_params_name : str, num_new_confs : int, snapshot_idx : int=-1, **kwargs):
+    def __init__(self, sim_params : SimulationParameters, num_new_confs : int, snapshot_idx : int=-1, **kwargs):
         '''Define parameters for vacuum anneal, along with number of new conformers'''
-        sim_param_path = impres.files(resources.sim_templates) / sim_params_name
-        if not sim_param_path.suffix:
-            sim_param_path = sim_param_path.with_name(f'{sim_param_path.stem}.json') # ensure charge params path has correct extension
-        self.sim_param_path = sim_param_path
-
+        self.sim_params    = sim_params
         self.num_new_confs = num_new_confs
-        self.snapshot_idx = snapshot_idx
+        self.snapshot_idx  = snapshot_idx
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-sim', '--sim_params'  , help='Name of the simulation parameters preset file to load for simulation', default='vacuum_anneal.json')
-        parser.add_argument('-r', '--num_replicates', help='Number of total conformers to generate (not counting the original)', type=int, default=4)
+        parser.add_argument('-r', '--num_new_confs'    , help='Number of total conformers to generate (not counting the original)', type=int, default=4)
+        parser.add_argument('-sim', '--sim_params_name', help='Name of the simulation parameters preset file to load for simulation', default='vacuum_anneal.json')
+        parser.add_argument('-dir', '--directory'      , help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
+        parser.add_argument('-sid', '--snapshot_idx'   , help='Index of the frame of the vacuum anneal simulation to take as the new conformation (by default -1, i.e. the final frame)', type=int, default=-1)
     
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        return {
+            'sim_params' : default_suffix(args.directory / args.sim_params_name, suffix='json'),
+            'num_new_confs' : args.num_new_confs,
+            'snapshot_idx' : args.snapshot_idx
+        }
+
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
         molbuf.solvent = False # force preference for unsolvated molecules (VACUUM anneal)
@@ -436,7 +483,7 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 )
 
                 # runn simulation
-                sim_step = RunSimulations(self.sim_param_path.stem)
+                sim_step = RunSimulations(self.sim_params)
                 simulate_polymer = sim_step.make_polymer_fn()
                 simulate_polymer(polymer, poly_logger)
                 

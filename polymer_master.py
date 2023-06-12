@@ -37,8 +37,6 @@ if __name__ == '__main__':
     # Defining filters and component protocols
     comp = Component.from_argparse(args)
     filters = comp.assert_filter_prefs(molbuf)
-    print(comp.__dict__, filters)
-
     task_fn = src_mgr.logging_wrapper(proc_name=Component.__name__, filters=filters)(comp.make_polymer_fn()) 
     
     # Execution
