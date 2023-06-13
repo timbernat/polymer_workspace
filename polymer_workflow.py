@@ -532,7 +532,7 @@ class _SlurmSbatch(WorkflowComponent):
         self.component = component
         self.sbatch_script = sbatch_script
         self.python_script_name = python_script_name
-        self.soource_path = source_path
+        self.source_path = source_path
 
         self.job_ids = []
         self.collect_job_ids = collect_job_ids
@@ -582,7 +582,7 @@ class _SlurmSbatch(WorkflowComponent):
             f'--output "slurm_logs/{mol_name}_dispatch.log"',
             str(self.sbatch_script), # define target .job script
             self.python_script_name, # script arguments begin here
-            str(self.soource_path), 
+            str(self.source_path), 
             self.component.name,
             mol_name,
             self.fetch_variable_args()
