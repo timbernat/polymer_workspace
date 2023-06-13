@@ -51,7 +51,7 @@ if __name__ == '__main__':
             collect_job_ids=args.collect_job_ids
         )
 
-        task_fn = src_mgr.logging_wrapper(proc_name=f'{Component.__name__}Parallel', filters=filters)(comp.make_polymer_fn()) 
+        task_fn = src_mgr.logging_wrapper(proc_name=f'{Component.__name__}Dispatch', filters=filters)(slurm_comp.make_polymer_fn()) 
     else:
         task_fn = src_mgr.logging_wrapper(proc_name=Component.__name__, filters=filters)(comp.make_polymer_fn()) 
         

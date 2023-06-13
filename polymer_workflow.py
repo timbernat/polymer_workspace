@@ -569,7 +569,10 @@ class _SlurmSbatch(WorkflowComponent):
     def fetch_variable_args(self) -> str:
         '''Collect the arguments passed to the Component for propogation to individual job calls'''
         arg_start_idx = sys.argv.index(self.component.name) + 1 # find where Component-specific arguments begin (immediately after job type spec)
-        return ' '.join(sys.argv[arg_start_idx:])       # collate into space-delimited string
+        arg_str = ' '.join(sys.argv[arg_start_idx:])       # collate into space-delimited string
+        print(arg_str)
+
+        return arg_str
 
     def generate_sbatch_cmd(self, mol_name : str) -> str: 
         '''Generate an sbatch command call string to be executed as a subprocess'''
