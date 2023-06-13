@@ -22,3 +22,6 @@ pcharge_heatmaps/*
 plots_for_paper/*
 figures_for_paper/*
 colina_data/*
+
+# Special exception to specifically NOT ignore
+!slurm_dispatch.job 
