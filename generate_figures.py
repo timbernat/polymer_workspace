@@ -24,7 +24,7 @@ from openmm.unit import nanosecond
 
 # Resource files
 import importlib_resources as impres
-import resources
+from polysaccharide import resources
 
 # Polymer Imports
 from polysaccharide.graphics import plotutils

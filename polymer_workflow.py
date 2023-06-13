@@ -17,7 +17,7 @@ from argparse import ArgumentParser, Namespace
 
 # Resource imports
 import importlib_resources as impres
-import resources
+from polysaccharide import resources
 
 avail_chg_templates = ', '.join(
     path.name
