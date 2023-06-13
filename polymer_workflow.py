@@ -369,11 +369,11 @@ class RunSimulations(WorkflowComponent):
         return polymer_fn
 
 class TransferMonomerCharges(WorkflowComponent):
-    desc = 'Transfer residue-averaged charges from reductions to full-sized collections'
+    desc = 'Transfer residue-averaged charged monomer files between Polymers in two collections'
     name = 'transfer'
 
-    def __init__(self, charged_mgr : PolymerManager, **kwargs):
-        self.charged_mgr = charged_mgr
+    def __init__(self, target_mgr : PolymerManager, **kwargs):
+        self.target_mgr = target_mgr
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
@@ -382,7 +382,7 @@ class TransferMonomerCharges(WorkflowComponent):
 
     @classmethod
     def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
-        return {'charged_mgr' : PolymerManager(args.target_path)}
+        return {'target_mgr' : PolymerManager(args.target_path)}
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
         '''Assert any additional preferences for filters beyond the default molecule filters'''
@@ -395,15 +395,15 @@ class TransferMonomerCharges(WorkflowComponent):
     def make_polymer_fn(self) -> PolymerFunction:
         '''Create wrapper for handling in logger'''
         def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
-            '''Copies charged monomer files from a corresponding Polymer in another collection'''
-            counterpart = self.charged_mgr.polymers[polymer.mol_name]
+            '''Copies charged monomer files FROM the current Polymer TO to a corresponding Polymer in the target collection'''
+            counterpart = self.target_mgr.polymers[polymer.mol_name] 
             assert(polymer.solvent == counterpart.solvent)
 
-            if not polymer.has_monomer_info_uncharged:
-                counterpart.transfer_file_attr('monomer_file_uncharged', polymer)
+            if not counterpart.has_monomer_info_uncharged:
+                polymer.transfer_file_attr('monomer_file_uncharged', counterpart)
             
-            if not polymer.has_monomer_info_charged:
-                counterpart.transfer_file_attr('monomer_file_charged', polymer)
+            if not counterpart.has_monomer_info_charged:
+                polymer.transfer_file_attr('monomer_file_charged', counterpart)
         
         return polymer_fn
     
