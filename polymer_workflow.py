@@ -378,7 +378,7 @@ class TransferMonomerCharges(WorkflowComponent):
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
-        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', required=True)
+        parser.add_argument('-targ', '--target_path', help='The path to the target output collection of Polymers to move charged monomers to', type=Path, required=True)
 
     @classmethod
     def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
@@ -481,7 +481,7 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
     @classmethod
     def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
         return {
-            'sim_params' : default_suffix(args.directory / args.sim_params_name, suffix='json'),
+            'sim_params' : SimulationParameters.from_file( default_suffix(args.directory / args.sim_params_name, suffix='json') ),
             'num_new_confs' : args.num_new_confs,
             'snapshot_idx' : args.snapshot_idx
         }
@@ -511,8 +511,8 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 )
 
                 # runn simulation
-                sim_step = RunSimulations(self.sim_params)
-                simulate_polymer = sim_step.make_polymer_fn()
+                sim_comp = RunSimulations(self.sim_params)
+                simulate_polymer = sim_comp.make_polymer_fn()
                 simulate_polymer(polymer, poly_logger)
                 
                 # replace clone's starting structure with new anneal structure
