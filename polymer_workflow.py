@@ -11,6 +11,8 @@ from shutil import copyfile
 from time import sleep
 from abc import abstractstaticmethod
 
+import re
+import sys, subprocess
 from argparse import ArgumentParser, Namespace
 
 # Resource imports
@@ -520,4 +522,78 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 poly_logger.info('Applying new conformation to clone')
                 new_conf.save(conf_clone.structure_file) # overwrite the clone's structure with the new conformer
                 
+        return polymer_fn
+
+class _SlurmSbatch(WorkflowComponent):
+    desc = 'Private component for handling parallel dispatch of single-polymer job submissions to slurm'
+    name = '_sbatch'
+
+    def __init__(self, component : WorkflowComponent, sbatch_script : Path, python_script_name : str, source_path : Path, collect_job_ids : bool=False, **kwargs):
+        self.component = component
+        self.sbatch_script = sbatch_script
+        self.python_script_name = python_script_name
+        self.soource_path = source_path
+
+        self.job_ids = []
+        self.collect_job_ids = collect_job_ids
+
+    @staticmethod
+    def argparse_inject(parser : ArgumentParser) -> None:
+        '''Flexible support for instantiating addition to argparse in an existing script'''
+        parser.add_argument('-comp', '--component_name'  , help='Name of the target WorkflowComponent type to parallelize', required=True)
+        parser.add_argument('-sb', '--sbatch_script'     , help='Name of the target slurm job script to use for submission', default='slurm_dispatch.job', type=Path)
+        parser.add_argument('-py', '--python_script_name', help='Name of the Python script which should be called on ')
+        parser.add_argument('-src', '--source_path' , help='The Path to the target collection of Polymers', required=True, type=Path)
+        parser.add_argument('-jid', '--collect_job_ids'  , help='Whether or not to gather job IDs when submitting (useful for creating dependencies in serial workflows)', action='store_true')
+
+    @classmethod
+    def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
+        return {
+            'component' : WorkflowComponent.registry[args.component_name],
+            'sbatch_script' : default_suffix(args.sbatch_script, suffix='job'),
+            'python_script_name' : args.python_script_name,
+            'source_path' : args.source_path,
+            'collect_job_ids' : args.collect_job_ids
+        }
+    
+    # methods UNIQUE to this component
+    @staticmethod
+    def extract_job_id(shell_str : Union[str, bytes]) -> str:
+        '''Extracts job id from shell-echoed string after slurm job submission'''
+        JOB_ID_RE = re.compile(r'Submitted batch job (\d+)')
+        if not isinstance(shell_str, str):
+            shell_str = str(shell_str)
+
+        return re.search(JOB_ID_RE, str(shell_str)).groups()[0]
+    
+    def fetch_variable_args(self) -> str:
+        '''Collect the arguments passed to the Component for propogation to individual job calls'''
+        arg_start_idx = sys.argv.index(self.component.name) + 1 # find where Component-specific arguments begin (immediately after job type spec)
+        return ' '.join(sys.argv[arg_start_idx:])       # collate into space-delimited string
+
+    def generate_sbatch_cmd(self, mol_name : str) -> str: 
+        '''Generate an sbatch command call string to be executed as a subprocess'''
+        return' '.join([
+            'sbatch',
+            f'--job-name "{mol_name}_dispatch"',
+            f'--output "slurm_logs/{mol_name}_dispatch.log"',
+            str(self.sbatch_script), # define target .job script
+            self.python_script_name, # script arguments begin here
+            str(self.soource_path), 
+            self.component.name,
+            mol_name,
+            self.fetch_variable_args()
+        ])
+
+    # polymer dispatch generation (NOT unique here)
+    def make_polymer_fn(self) -> PolymerFunction:
+        '''Create wrapper for handling in logger'''
+        def polymer_fn(polymer : Polymer, poly_logger : logging.Logger) -> None:
+            '''Echo requisite information for a single molecule'''
+            cmd = self.generate_sbatch_cmd(polymer.mol_name)
+            slurm_out = subprocess.check_output([cmd], shell=True) # submit job via subprocess shell call
+            
+            if self.collect_job_ids:
+                self.job_ids.append(self.extract_job_id(slurm_out))
+        
         return polymer_fn
