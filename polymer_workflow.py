@@ -521,4 +521,3 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 new_conf.save(conf_clone.structure_file) # overwrite the clone's structure with the new conformer
                 
         return polymer_fn
-
