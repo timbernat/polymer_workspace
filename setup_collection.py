@@ -14,18 +14,17 @@ from pathlib import Path
 # Custom Imports
 from polysaccharide.polymer.management import PolymerManager
 
-# Static Paths
-COLL_PATH = Path('Collections')
-COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
-
 # CLI arg parsing
 # ------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(
     description=__doc__
 )
-parser.add_argument('-strct', '--structures', help='The name of the directory in the set compatible_pdbs folder containing the target pdb and monomer directories', required=True)
-parser.add_argument('-out', '--output_name' , help='The name of the output collection of Polymers')
+
+parser.add_argument('-pdb', '--struct_input', help='The name of the directory to source PDB structure from', type=Path, required=True)
+parser.add_argument('-mono' , '--mono_input', help='The name of the directory to source JSON monomer files from', type=Path)
+parser.add_argument('-out', '--output_path' , help='The name of the output collection of Polymers', type=Path, required=True)
+
 parser.add_argument('-r'  , '--reset'       , help='If set, will delete the target collection if it already exists'        , action='store_true')
 parser.add_argument('-ps' , '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection', action='store_true')
 parser.add_argument('-pl' , '--purge_logs'  , help='If set, will delete any extant log files in the target collection'     , action='store_true')
@@ -36,13 +35,9 @@ args = parser.parse_args()
 # ------------------------------------------------------------------------------
 
 ## defining paths
-poly_source_path = COMPAT_PDB_PATH / args.structures
-structure_path   = poly_source_path / f'{poly_source_path.name}_structures'
-monomer_path     = poly_source_path / f'{poly_source_path.name}_monomers'
-
-if args.output_name is None:
-    args.output_name = args.structures
-collection_path  = COLL_PATH / args.output_name
+structure_path   = args.struct_input
+monomer_path     = args.mono_input
+collection_path  = args.output_path
 
 # Execution
 # ------------------------------------------------------------------------------
