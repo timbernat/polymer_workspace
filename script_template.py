@@ -8,13 +8,13 @@ from pathlib import Path
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
-import polymer_workflow
+import polysaccharide.workflow.components as components
 
 # CLI arg parsing
 # ------------------------------------------------------------------------------
 
 COMP_NAME = 'ChargeAssignment'
-Component = getattr(polymer_workflow, COMP_NAME)
+Component = getattr(components, COMP_NAME)
 
 parser = argparse.ArgumentParser(description=Component.desc)
 parser.add_argument('-src', '--source_path' , help='The Path to the target collection of Polymers', required=True, type=Path)

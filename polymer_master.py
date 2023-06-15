@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
-import polymer_workflow
+import polysaccharide.workflow.components as components
 
 
 # CLI argument parsing
@@ -22,7 +22,7 @@ parser.add_argument('-sb', '--sbatch_script'     , help='Name of the target slur
 parser.add_argument('-jid', '--collect_job_ids'  , help='Whether or not to gather job IDs when submitting (useful for creating dependencies in serial workflows)', action='store_true')
 subparsers = parser.add_subparsers(help='Concrete implementations of various workflow components', dest='component')
 
-for comp_name, Component in polymer_workflow.WorkflowComponent.registry.items():
+for comp_name, Component in components.WorkflowComponent.registry.items():
     subparser = subparsers.add_parser(comp_name, help=Component.desc)
     Component.argparse_inject(subparser) # generate dedicated subparser for each component
     MolFilterBuffer.argparse_inject(subparser) # add filtering options 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # Processing args into principal objects
     src_mgr = PolymerManager(args.source_path)
     molbuf = MolFilterBuffer.from_argparse(args)
-    Component = polymer_workflow.WorkflowComponent.registry[args.component]
+    Component = components.WorkflowComponent.registry[args.component]
 
     # Defining filters and component protocols
     comp = Component.from_argparse(args)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     # branch for parallelization
     if args.parallelize_sbatch:
-        slurm_comp = polymer_workflow._SlurmSbatch(
+        slurm_comp = components._SlurmSbatch(
             comp,
             sbatch_script=args.sbatch_script,
             python_script_name=__file__, # recall this script for singleton molecule
