@@ -32,7 +32,7 @@ from polysaccharide.analysis import trajectory, statistics, equilibrium
 
 from polysaccharide.polymer.representation import Polymer
 from polysaccharide.polymer.management import PolymerManager
-from polysaccharide.polymer.filtering import has_sims
+from polysaccharide.polymer.filtering import has_sims, has_binary_traj
 
 # Static Paths
 COMPAT_PDB_PATH = Path('compatible_pdbs_updated')
@@ -48,7 +48,6 @@ save_dir = Path('figures_for_paper/100_ns_trials')
 compare_dir = Path('colina_data')
 
 is_long_sim = lambda sim_paths, sim_params : (sim_params.total_time == 100*nanosecond)
-has_binary_traj = lambda sim_paths, sim_params : (sim_params.report_to_pdb == False)
 
 CHG_CVTRS = {
     'Charge heatmap 2D' : 'SMARTS',
