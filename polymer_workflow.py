@@ -522,7 +522,7 @@ class VacuumAnneal(WorkflowComponent): # TODO : decompose this into cloning, sim
                 )
 
                 # runn simulation
-                sim_comp = RunSimulations(self.sim_params)
+                sim_comp = RunSimulations(self.sim_params, affix=self.name)
                 simulate_polymer = sim_comp.make_polymer_fn()
                 simulate_polymer(polymer, poly_logger)
                 
