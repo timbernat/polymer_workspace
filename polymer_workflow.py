@@ -41,6 +41,7 @@ from polysaccharide.charging.application import ChargingParameters, CHARGER_REGI
 from polysaccharide.charging.averaging import get_averaged_residue_charges, AveragingCharger
 
 from polysaccharide.simulation.records import SimulationParameters
+from polysaccharide.simulation.ensemble import EnsembleSimulationFactory
 from polysaccharide.simulation.execution import run_simulation
 
 from polysaccharide.polymer.representation import Polymer
@@ -322,18 +323,20 @@ class RunSimulations(WorkflowComponent):
     desc = 'Prepares and integrates MD simulation for chosen molecules in OpenMM'
     name = 'simulate'
 
-    def __init__(self, sim_params : Union[SimulationParameters, Iterable[SimulationParameters]], **kwargs):
+    def __init__(self, sim_params : Union[SimulationParameters, Iterable[SimulationParameters]], affix : str='', **kwargs):
         '''Initialize 1 or more sets of simulation parameters'''
         if not sim_params:
             raise ValueError('Must specify at least 1 simulation parameter preset')
         
         self.sim_params = asiterable(sim_params) # handle singleton case
+        self.affix = affix
 
     @staticmethod
     def argparse_inject(parser : ArgumentParser) -> None:
         '''Flexible support for instantiating addition to argparse in an existing script'''
         parser.add_argument('-sp', '--sim_param_names', help=f'Name of the simulation parameters preset file(s) to load for simulation (available files are {avail_sim_templates})', action='store', nargs='+', required=True)
-        parser.add_argument('-dir', '--directory', help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
+        parser.add_argument('-dir', '--directory'     , help='Path of the folder in which the chosen simulation parameters preset file(s) reside', type=Path, default=impres.files(resources.sim_templates))
+        parser.add_argument('-a', '--affix'           , help='Any additional text to preprend to simulation output directory', default='')
 
     @classmethod
     def process_argparse_args(self, args: Namespace) -> dict[Any, Any]:
@@ -342,7 +345,8 @@ class RunSimulations(WorkflowComponent):
             'sim_params' : [
                 SimulationParameters.from_file(default_suffix(args.directory / sim_param_name, suffix='json')) 
                     for sim_param_name in args.sim_param_names
-            ]
+            ],
+            'affix' : args.affix
         }
 
     def assert_filter_prefs(self, molbuf : MolFilterBuffer) -> list[MolFilter]:
@@ -357,14 +361,21 @@ class RunSimulations(WorkflowComponent):
             N = len(self.sim_params)
             for i, sim_params in enumerate(self.sim_params):
                 poly_logger.info(f'Running simulation {i + 1} / {N}')
+
+                # initialize OpenFF Interchange from Molecule
                 interchange = polymer.interchange(
                     forcefield_path=sim_params.forcefield_path,
                     charge_method=sim_params.charge_method,
                     periodic=sim_params.periodic
                 )
 
-                sim_folder = polymer.make_sim_dir()
-                run_simulation(interchange, sim_params=sim_params, output_folder=sim_folder, output_name=polymer.mol_name)
+                # Create ensemble-specific Simulation from Interchange 
+                sim_factory = EnsembleSimulationFactory.registry[sim_params.ensemble.upper()]() # case-insensitive check for simulation creators for the desired ensemble
+                simulation = sim_factory.create_simulation(interchange, sim_params=sim_params)
+
+                # Create output folder, populate with simulation files, and integrate
+                sim_folder = polymer.make_sim_dir(affix=self.affix)
+                run_simulation(simulation, sim_params=sim_params, output_folder=sim_folder, output_name=polymer.mol_name)
 
         return polymer_fn
 
