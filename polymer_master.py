@@ -58,5 +58,5 @@ if __name__ == '__main__':
     # Execution
     task_fn()
     if args.parallelize_sbatch and args.collect_job_ids:
-        print(slurm_comp.job_ids)
+        print(slurm_comp.dependency_str)
     
