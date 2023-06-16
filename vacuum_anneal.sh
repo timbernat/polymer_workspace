@@ -18,4 +18,4 @@ do
 done
 
 python -m polymer_master -src $conf_path  solvate --solvents WATER_TIP3P
-python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --no-solvent --no-charge # temporary measure to ensure conformers also have charges assigned
+python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --solvent --no-charge # temporary measure to ensure conformers also have charges assigned
