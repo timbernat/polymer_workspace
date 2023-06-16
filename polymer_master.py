@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO, force=True)
 # Generic imports
 import argparse
 from pathlib import Path
+import datetime
 
 # Polymer Imports
 from polysaccharide.polymer.management import PolymerManager, MolFilterBuffer
@@ -20,6 +21,11 @@ parser.add_argument('-src', '--source_path' , help='The Path to the target colle
 parser.add_argument('-ps', '--parallelize_sbatch', help='Whether or not to dispatch jobs in parallel via a job submission script', action='store_true')
 parser.add_argument('-sb', '--sbatch_script'     , help='Name of the target slurm job script to use for submission', default='slurm_dispatch.job', type=Path)
 parser.add_argument('-jid', '--collect_job_ids'  , help='Whether or not to gather job IDs when submitting (useful for creating dependencies in serial workflows)', action='store_true')
+
+parser.add_argument('-hr', '--hours'   , help='Number of hours to allocate in job walltime'  , type=int, default=0)
+parser.add_argument('-min', '--minutes', help='Number of minutes to allocate in job walltime', type=int, default=30)
+parser.add_argument('-sec', '--seconds', help='Number of seconds to allocate in job walltime', type=int, default=0)
+
 subparsers = parser.add_subparsers(help='Concrete implementations of various workflow components', dest='component')
 
 for comp_name, Component in components.WorkflowComponent.registry.items():
@@ -48,6 +54,7 @@ if __name__ == '__main__':
             sbatch_script=args.sbatch_script,
             python_script_name=__file__, # recall this script for singleton molecule
             source_path=args.source_path,
+            jobtime=datetime.time(hour=args.hours, minute=args.minutes, second=args.seconds),
             collect_job_ids=args.collect_job_ids
         )
 
