@@ -21,9 +21,9 @@ parser = argparse.ArgumentParser(
     description=__doc__
 )
 
-parser.add_argument('-pdb', '--struct_input', help='The name of the directory to source PDB structure from', type=Path, required=True)
-parser.add_argument('-mono' , '--mono_input', help='The name of the directory to source JSON monomer files from', type=Path)
 parser.add_argument('-out', '--output_path' , help='The name of the output collection of Polymers', type=Path, required=True)
+parser.add_argument('-pdb', '--struct_input', help='The name of the directory to source PDB structure from', type=Path)
+parser.add_argument('-mono' , '--mono_input', help='The name of the directory to source JSON monomer files from', type=Path)
 
 parser.add_argument('-r'  , '--reset'       , help='If set, will delete the target collection if it already exists'        , action='store_true')
 parser.add_argument('-ps' , '--purge_sims'  , help='If set, will delete any extant MD simulations in the target collection', action='store_true')
@@ -37,13 +37,12 @@ args = parser.parse_args()
 ## defining paths
 structure_path   = args.struct_input
 monomer_path     = args.mono_input
-collection_path  = args.output_path
 
 # Execution
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    mgr = PolymerManager(collection_path)
+    mgr = PolymerManager(args.output_path)
 
     # Purge logs (if desired), then set up new loggesr
     if args.purge_logs: # NOTE : must be done BEFORE log FileHandler is created, as this will destroy it's output as well
@@ -57,5 +56,5 @@ if __name__ == '__main__':
         if args.purge_sims:
             mgr.purge_sims(really=True)
 
-        if not mgr.polymers: # will be empty if not yet instantiated or if reset prior
+        if (not mgr.polymers) and (structure_path is not None) and (monomer_path is not None): # will be empty if not yet instantiated or if reset prior
             mgr.populate_collection(struct_dir=structure_path, monomer_dir=monomer_path)
