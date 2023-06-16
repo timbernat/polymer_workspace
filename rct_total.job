@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=08:00:00
+#SBATCH --partition=blanca-shirts
+#SBATCH --qos=blanca-shirts
+#SBATCH --gres=gpu
+#SBATCH --job-name=rct_total
+#SBATCH --output=slurm_logs/rct_total.log
+# #SBATCH --mail-user=tibe3324@colorado.edu
+# #SBATCH --mail-type=END
+
+module purge
+ml anaconda
+conda activate openff-dev
+
+coll_dir='Collections'
+full_name='water_soluble_polymers'
+redux_name='water_soluble_reduced'
+
+bash rct_reduction.sh $coll_dir $full_name $redux_name
+job_ids=$(python -m polymer_master -src $coll_dir/$redux_name -ps -jid charge -cp standard_chg_params.json)
+sbatch --dependency "afterok:$job_ids" rct_transfer.job $coll_dir $full_name $redux_name
