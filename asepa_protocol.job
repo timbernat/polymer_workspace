@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=00:30:00
+#SBATCH --partition=blanca-shirts
+#SBATCH --qos=blanca-shirts
+#SBATCH --gres=gpu
+#SBATCH --job-name=asepa_wasps
+#SBATCH --output=slurm_logs/asepa_wasps.log
+# #SBATCH --mail-user=tibe3324@colorado.edu
+# #SBATCH --mail-type=END
+
+module purge
+ml anaconda
+conda activate openff-dev
+
+coll_dir='Collections'
+full_name='water_soluble_polymers'
+num_confs=4
+
+# 1) Anneal
+conf_name="${full_name}_confs"
+conf_path="$coll_dir/$conf_name"
+bash vacuum_anneal.sh $coll_dir $full_name $conf_name $num_confs 
+
+# 2) Solvate
+python -m polymer_master -src $conf_path solvate --solvents WATER_TIP3P --charges
+
+# 3) Equilibrate
+equil_name="${full_name}_equil"
+equil_path="$coll_dir/$equil_name"
+python -m setup_collection -out $equil_path # DON"T source PDBs or JSONs (will be clones) 
+python -m polymer_master -src $conf_path simulate -sp equilibration --solvent
+python -m polymer_master -src $conf_path transfer_struct -dest $equil_path -caf equil
+
+# 4) Production
+prod_name="${full_name}_prod"
+prod_path="$coll_dir/$prod_name"
+# job_ids=$(python -m polymer_master -src $conf_path simulate -sp equilibration --solvent)
+
+# 5) Analysis
