@@ -8,8 +8,8 @@
 #SBATCH --gres=gpu
 #SBATCH --job-name=asepa_wasps
 #SBATCH --output=slurm_logs/asepa_wasps.log
-# #SBATCH --mail-user=tibe3324@colorado.edu
-# #SBATCH --mail-type=END
+#SBATCH --mail-user=tibe3324@colorado.edu
+#SBATCH --mail-type=END
 
 module purge
 ml anaconda
@@ -25,18 +25,24 @@ conf_path="$coll_dir/$conf_name"
 bash vacuum_anneal.sh $coll_dir $full_name $conf_name $num_confs 
 
 # 2) Solvate
-python -m polymer_master -src $conf_path solvate --solvents WATER_TIP3P --charges
+python -m polymer_master -src $conf_path  solvate --solvents WATER_TIP3P
+python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --solvent --no-charge # temporary measure to ensure conformers also have charges assigned
 
 # 3) Equilibrate
 equil_name="${full_name}_equil"
 equil_path="$coll_dir/$equil_name"
-python -m setup_collection -out $equil_path # DON"T source PDBs or JSONs (will be clones) 
-python -m polymer_master -src $conf_path simulate -sp equilibration --solvent
-python -m polymer_master -src $conf_path transfer_struct -dest $equil_path -caf equil
+python -m polymer_master -src $conf_path  simulate -sp equilibration --solvent
+bash equil_transfer.sh $coll_dir $conf_name $equil_name
 
 # 4) Production
 prod_name="${full_name}_prod"
 prod_path="$coll_dir/$prod_name"
-# job_ids=$(python -m polymer_master -src $conf_path simulate -sp equilibration --solvent)
+job_ids_1=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_ABE10_avgd --solvent)
+job_ids_2=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_espaloma --solvent)
+# job_ids=$(python -m polymer_master -src $equil_path -ps -jid --hours=24 --minutes=0 simulate -sp production --solvent)
+
+job_ids="$job_ids_1:$job_ids_2"
+echo $job_ids
 
 # 5) Analysis
+python -m polymer_master -src $equil_path analyze --sim_time 1 #--sim_time 100
