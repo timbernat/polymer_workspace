@@ -31,8 +31,10 @@ python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --so
 # 3) Equilibrate
 equil_name="${full_name}_equil"
 equil_path="$coll_dir/$equil_name"
+python -m setup_collection --output_path $equil_path # create empty destination Collection
 python -m polymer_master -src $conf_path  simulate -sp equilibration --solvent
-bash equil_transfer.sh $coll_dir $conf_name $equil_name
+python -m polymer_master -src $conf_path  transfer_struct -dest $equil_path -caf equil --solvent
+python -m polymer_master -src $equil_path charge -cp long_chain_chg_params
 
 # 4) Production
 prod_name="${full_name}_prod"
