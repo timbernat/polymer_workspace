@@ -8,8 +8,8 @@
 #SBATCH --gres=gpu
 #SBATCH --job-name=rct_total
 #SBATCH --output=slurm_logs/rct_total.log
-# #SBATCH --mail-user=tibe3324@colorado.edu
-# #SBATCH --mail-type=END
+#SBATCH --mail-user=tibe3324@colorado.edu
+#SBATCH --mail-type=END
 
 module purge
 ml anaconda

@@ -2,7 +2,7 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --partition=blanca-shirts
 #SBATCH --qos=blanca-shirts
 #SBATCH --gres=gpu
@@ -17,7 +17,7 @@ conda activate openff-dev
 
 coll_dir='Collections'
 full_name='water_soluble_polymers'
-num_confs=4
+num_confs=1 #4
 
 # 1) Anneal
 conf_name="${full_name}_confs"
@@ -41,7 +41,6 @@ prod_name="${full_name}_prod"
 prod_path="$coll_dir/$prod_name"
 job_ids_1=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_ABE10_avgd --solvent)
 job_ids_2=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_espaloma --solvent)
-# job_ids=$(python -m polymer_master -src $equil_path -ps -jid --hours=24 --minutes=0 simulate -sp production --solvent)
 
 job_ids="$job_ids_1:$job_ids_2"
 echo $job_ids
