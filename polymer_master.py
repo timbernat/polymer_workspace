@@ -2,7 +2,14 @@
 
 # Logging
 import logging
-logging.basicConfig(level=logging.INFO, force=True)
+from polysaccharide import logutils
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=logutils.LOG_FORMATTER._fmt,
+    datefmt=logutils.LOG_FORMATTER.datefmt,
+    force=True
+)
 
 # Generic imports
 import argparse
@@ -17,7 +24,7 @@ import polysaccharide.workflow.components as components
 # CLI argument parsing
 # ------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('-src', '--source_path' , help='The Path to the target collection of Polymers', required=True, type=Path)
+parser.add_argument('-src', '--source_path'      , help='The Path to the target collection of Polymers', required=True, type=Path)
 parser.add_argument('-ps', '--parallelize_sbatch', help='Whether or not to dispatch jobs in parallel via a job submission script', action='store_true')
 parser.add_argument('-sb', '--sbatch_script'     , help='Name of the target slurm job script to use for submission', default='slurm_dispatch.job', type=Path)
 parser.add_argument('-jid', '--collect_job_ids'  , help='Whether or not to gather job IDs when submitting (useful for creating dependencies in serial workflows)', action='store_true')
