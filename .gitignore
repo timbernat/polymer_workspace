@@ -23,5 +23,9 @@ plots_for_paper/*
 figures_for_paper/*
 colina_data/*
 
+# debugging
+debug.py
+trans_pdb/*
+
 # Special exception to specifically NOT ignore
 !slurm_dispatch.job 
