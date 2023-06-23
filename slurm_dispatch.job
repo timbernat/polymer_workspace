@@ -5,8 +5,8 @@
 #SBATCH --partition=blanca-shirts
 #SBATCH --qos=blanca-shirts
 #SBATCH --gres=gpu
-# #SBATCH --mail-user=tibe3324@colorado.edu
-# #SBATCH --mail-type=END
+#SBATCH --mail-user=tibe3324@colorado.edu
+#SBATCH --mail-type=END
 
 module purge
 ml anaconda
@@ -19,7 +19,7 @@ shift 4; arg_str=$@ # collect all the rest of the arguments to pass on to funcit
 
 cmd="$call_file -src $source_name $comp_name $arg_str --molecules $mol_name"
 echo "$cmd"
-echo "$arg_str"
+# echo "$arg_str"
 
 conda activate openff-dev
 python $cmd
