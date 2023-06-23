@@ -6,8 +6,8 @@
 #SBATCH --partition=blanca-shirts
 #SBATCH --qos=blanca-shirts
 #SBATCH --gres=gpu
-#SBATCH --job-name=asepa_wasps
-#SBATCH --output=slurm_logs/asepa_wasps.log
+#SBATCH --job-name=asepa_protocol
+#SBATCH --output=slurm_logs/asepa_protocol.log
 #SBATCH --mail-user=tibe3324@colorado.edu
 #SBATCH --mail-type=END
 
@@ -17,7 +17,7 @@ conda activate openff-dev
 
 coll_dir='Collections'
 full_name='water_soluble_polymers'
-num_confs=1 #4
+num_confs=4
 
 # 1) Anneal
 conf_name="${full_name}_confs"
@@ -31,19 +31,24 @@ python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --so
 # 3) Equilibrate
 equil_name="${full_name}_equil"
 equil_path="$coll_dir/$equil_name"
+
 python -m setup_collection --output_path $equil_path # create empty destination Collection
 python -m polymer_master -src $conf_path  simulate -sp equilibration --solvent
-python -m polymer_master -src $conf_path  transfer_struct -dest $equil_path -caf equil --solvent
-python -m polymer_master -src $equil_path charge -cp long_chain_chg_params
+python -m polymer_master -src $conf_path  transfer_struct -dest $equil_path -caf equil --remove_solvent --solvent
+python -m polymer_master -src $equil_path solvate --solvents WATER_TIP3P
+python -m polymer_master -src $equil_path charge -cp long_chain_chg_params --solvent --no-charge
 
 # 4) Production
 prod_name="${full_name}_prod"
 prod_path="$coll_dir/$prod_name"
-job_ids_1=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_ABE10_avgd --solvent)
-job_ids_2=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_espaloma --solvent)
+
+# job_ids_1=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_ABE10_avgd --solvent)
+# job_ids_2=$(python -m polymer_master -src $equil_path -ps -jid --hours=1 --minutes=0 simulate -sp pilot_espaloma   --solvent)
+job_ids_1=$(python -m polymer_master -src $equil_path -ps -jid --hours=12 --minutes=0 simulate -sp 100_ns_NVT_ABE10_avgd --solvent)
+job_ids_2=$(python -m polymer_master -src $equil_path -ps -jid --hours=12 --minutes=0 simulate -sp 100_ns_NVT_espaloma   --solvent)
 
 job_ids="$job_ids_1:$job_ids_2"
 echo $job_ids
 
 # 5) Analysis
-python -m polymer_master -src $equil_path analyze --sim_time 1 #--sim_time 100
+sbatch --dependency "afterok:$job_ids" analyze_traj.job $equil_path
