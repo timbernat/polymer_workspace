@@ -27,6 +27,7 @@ long_homopolymers/*
 # debugging
 debug.py
 trans_pdb/*
+newest_structures/*
 
 # Special exception to specifically NOT ignore
 !slurm_dispatch.job 
