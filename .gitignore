@@ -22,7 +22,7 @@ pcharge_heatmaps/*
 plots_for_paper/*
 figures_for_paper/*
 colina_data/*
-long_homopolymers/*
+long_linear_polymers/*
 
 # debugging
 debug.py
