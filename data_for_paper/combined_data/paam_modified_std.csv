@@ -1,0 +1,4 @@
+,Sage 2.0.0 - ABE10_averaged,Sage 2.0.0 - Espaloma_AM1BCC,DREIDING - RESP,GAFF - RESP,GAFF2 - RESP
+"Radius of Gyration (Rg, nm)",0.1010904987463716,0.069110946808908,0.286,0.132,0.115
+"Solvent Accessible Surface Area (SASA, nm**2)",1.9665472814653815,0.4698019302997426,0.89,1.4,2.03
+"Relative Shape Anisotropy (K2, dimensionless)",0.0828527052798445,0.0453856298286441,0.17,0.11,0.15
