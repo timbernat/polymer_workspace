@@ -15,7 +15,8 @@ module purge
 ml anaconda
 conda activate openff-dev
 
-coll_dir='Collections'
+# coll_dir='Collections'
+coll_dir='Reruns'
 full_name='water_soluble_polymers'
 redux_name='water_soluble_reduced'
 

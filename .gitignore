@@ -3,6 +3,7 @@
 Polyamides/*
 Collections/*
 Collections_legacy/*
+Reruns/*
 
 # Custom utilities which have their own repo
 polymer_utils/*
