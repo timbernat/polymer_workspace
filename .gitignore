@@ -29,6 +29,7 @@ long_linear_polymers/*
 debug.py
 trans_pdb/*
 newest_structures/*
+conf_gen/*
 
 # Special exception to specifically NOT ignore
 !slurm_dispatch.job 
