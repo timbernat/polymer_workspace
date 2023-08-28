@@ -4,6 +4,7 @@ Polyamides/*
 Collections/*
 Collections_legacy/*
 Reruns/*
+Reruns_PBC/*
 
 # Custom utilities which have their own repo
 polymer_utils/*
@@ -16,6 +17,7 @@ polysaccharide/*
 *.job
 *.out
 slurm_logs/*
+slurm_logs_prior/*
 blanca_testing/*
 
 # figures and plots

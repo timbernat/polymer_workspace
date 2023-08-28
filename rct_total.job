@@ -16,7 +16,8 @@ ml anaconda
 conda activate openff-dev
 
 # coll_dir='Collections'
-coll_dir='Reruns'
+# coll_dir='Reruns'
+coll_dir='Reruns_PBC'
 full_name='water_soluble_polymers'
 redux_name='water_soluble_reduced'
 max_chain_len=150
