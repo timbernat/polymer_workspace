@@ -16,9 +16,11 @@ ml anaconda
 conda activate openff-dev
 
 # coll_dir='Collections'
-coll_dir='Reruns'
+# coll_dir='Reruns'
+coll_dir='Reruns_PBC'
 full_name='water_soluble_polymers'
 num_confs=4
+exclusion_nm=1.3
 
 # 1) Anneal
 conf_name="${full_name}_confs"
@@ -26,7 +28,7 @@ conf_path="$coll_dir/$conf_name"
 bash vacuum_anneal.sh $coll_dir $full_name $conf_name $num_confs 
 
 # 2) Solvate
-python -m polymer_master -src $conf_path  solvate --solvents WATER_TIP3P
+python -m polymer_master -src $conf_path  solvate --solvents WATER_TIP3P --exclusion $exclusion_nm
 python -m polymer_master -src $conf_path  charge  -cp long_chain_chg_params --solvent --no-charge # temporary measure to ensure conformers also have charges assigned
 
 # 3) Equilibrate
@@ -36,7 +38,7 @@ equil_path="$coll_dir/$equil_name"
 python -m setup_collection --output_path $equil_path # create empty destination Collection
 python -m polymer_master -src $conf_path  simulate -sp equilibration --solvent
 python -m polymer_master -src $conf_path  transfer_struct -dest $equil_path -caf equil --remove_solvent --solvent
-python -m polymer_master -src $equil_path solvate --solvents WATER_TIP3P
+python -m polymer_master -src $equil_path solvate --solvents WATER_TIP3P --exclusion $exclusion_nm
 python -m polymer_master -src $equil_path charge -cp long_chain_chg_params --solvent --no-charge
 
 # 4) Production
