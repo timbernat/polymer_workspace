@@ -1,0 +1,7 @@
+,,Sage 2.0.0 - Espaloma_AM1BCC,Sage 2.0.0 - ABE10_averaged,CHARMM - Mulliken,CHARMM-c - Mulliken
+observables,"Radius of Gyration (Rg, nm)",1.3580533561059018,0.955062634548943,1.001,1.298
+observables,"Solvent Accessible Surface Area (SASA, nm**2)",29.44715720395,22.566230195200003,25.85,30.72
+observables,"Relative Shape Anisotropy (K2, dimensionless)",0.403340131737037,0.2540416472588714,0.28,0.39
+uncertainties,"Radius of Gyration (Rg, nm)",0.0197710150186305,0.0133838025651203,0.18,0.243
+uncertainties,"Solvent Accessible Surface Area (SASA, nm**2)",0.1222714956369968,0.2551872075161837,3.22,2.45
+uncertainties,"Relative Shape Anisotropy (K2, dimensionless)",0.0144306794592788,0.0087460255140162,0.16,0.18

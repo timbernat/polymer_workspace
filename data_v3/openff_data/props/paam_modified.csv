@@ -1,0 +1,7 @@
+,,Sage 2.0.0 - ABE10_averaged,Sage 2.0.0 - Espaloma_AM1BCC
+observables,"Radius of Gyration (Rg, nm)",0.9707323612193467,1.4148729417412094
+observables,"Solvent Accessible Surface Area (SASA, nm**2)",27.801477243749996,35.67051244755
+observables,"Relative Shape Anisotropy (K2, dimensionless)",0.17114044738003917,0.39264476234978896
+uncertainties,"Radius of Gyration (Rg, nm)",0.05224421471960155,0.04121658237419734
+uncertainties,"Solvent Accessible Surface Area (SASA, nm**2)",0.9657859623300118,0.7691198016846928
+uncertainties,"Relative Shape Anisotropy (K2, dimensionless)",0.04797105621992121,0.022915498073166386
