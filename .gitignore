@@ -5,6 +5,7 @@ Collections/*
 Collections_legacy/*
 Reruns/*
 Reruns_PBC/*
+Reruns_PBC_2/*
 
 # Custom utilities which have their own repo
 polymer_utils/*
@@ -20,15 +21,19 @@ slurm_logs/*
 slurm_logs_prior/*
 blanca_testing/*
 
-# figures and plots
-pcharge_heatmaps/*
-plots_for_paper/*
-figures_for_pres/*
-figures_for_paper/*
-figures_v3/*
+# additional data
 colina_data/*
 long_linear_polymers/*
 data_for_paper_200/*
+
+# figure and plots
+pcharge_heatmaps/*
+plots_for_paper/*
+
+figures_for_pres/*
+figures_for_paper/*
+figures_v3/*
+figures_v4/*
 
 # debugging
 debug.py
