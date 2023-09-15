@@ -42,6 +42,8 @@ debug.py
 trans_pdb/*
 newest_structures/*
 conf_gen/*
+openmm_ser/*
+omm_pdb_debug/*
 
 # Special exception to specifically NOT ignore
 !slurm_dispatch.job 
